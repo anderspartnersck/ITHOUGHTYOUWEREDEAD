@@ -1,0 +1,189 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>I THOUGHT YOU WERE DEAD! — MEAN STREETS Cabinet</title>
+<!--
+  THE DESKTOP CABINET — the house panel-view build (PATTY MELT / MERC ZEBRA sibling).
+  No more tiny "play the cab" inset launcher: the FINAL desktop experience is the live
+  game mounted BIG and cinematic over the real control deck.
+    mean_streets_1up_final.png  (1254x1254)  — the full neon-arcade cab (the BEAUTY render)
+    mean_streets_1up_panel.png  (1254x265)   — the deck strip: stick · WHOA! · DID YOU SEE THAT? · the seals
+  PANEL layout = a wide live monitor (index.html?embed, edge-to-edge widescreen) seated
+  directly above the deck strip, so it reads as one cabinet front. The BOOT is the house
+  ritual: a Ken Burns PUSH into the cab beauty render → the LOGO card → coin → the deck.
+    ?view=panel  big live monitor over the deck   [DEFAULT — what players want]
+    ?view=cab    full-cab beauty render (inset screen)   [opt-in: shots / registration]
+    ?bare        just the live screen, no cab   (QA / embed)
+    ?nointro     skip the Ken Burns + logo boot
+  Engine untouched — presentation only.
+-->
+<style>
+  :root{ --amber:#ff8a2a; --gold:#d8a23a; --blood:#b5232b; --cyan:#3fd0ff; --bone:#e9e4d6; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+  html,body{ margin:0; height:100%; background:#050410; overflow:hidden; cursor:default;
+    font-family:"Saira Condensed","Oswald",ui-monospace,monospace; color:#cdd3da;
+    display:flex; align-items:center; justify-content:center; }
+
+  /* dark arcade room — the cab render, blurred, behind the cabinet (no black letterbox on wide) */
+  #room{ position:fixed; inset:-10%; z-index:0;
+    background:url('sprites/cabinet/mean_streets_1up_final.png') center/cover no-repeat;
+    filter:blur(64px) brightness(.30) saturate(1.3); transform:scale(1.12); }
+  #room::after{ content:""; position:absolute; inset:0;
+    background:radial-gradient(120% 100% at 50% 42%, transparent 38%, rgba(4,3,12,.80)); }
+
+  /* ===== PANEL VIEW — live monitor stacked on the deck strip =====
+     #stage is sized so monitor(16:9) + deck(1254:265) together fit the viewport. */
+  #stage{ position:relative; z-index:1; display:flex; flex-direction:column;
+    width:min(96vw, calc(94vh * 1.29)); }
+  #mon{ position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden;
+    border-radius:.6vh .6vh 0 0; box-shadow:0 0 0 .55vh #14130e, 0 24px 60px rgba(0,0,0,.7); }
+  #mon iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; }
+  /* glass: bezel sheen + corner vignette seats the live screen into the cabinet */
+  #monVig{ position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:.6vh .6vh 0 0;
+    box-shadow:inset 0 0 64px 14px rgba(0,0,0,.6), inset 0 0 0 2px rgba(63,208,255,.10);
+    background:radial-gradient(130% 120% at 50% 44%, transparent 60%, rgba(0,0,0,.45)); }
+  #deck{ width:100%; aspect-ratio:1254/265; display:block; object-fit:cover;
+    filter:drop-shadow(0 22px 40px rgba(0,0,0,.6)); }
+
+  /* ===== CAB VIEW — full-cab beauty render w/ inset live screen (opt-in: ?view=cab) ===== */
+  #cabwrap{ position:relative; z-index:1; height:96vh; aspect-ratio:1/1; max-width:96vw; display:none;
+    --sl:28.9%; --st:40.7%; --sw:34.0%; --sh:25.0%; }
+  body.cabview #stage{ display:none; }
+  body.cabview #cabwrap{ display:block; }
+  #cabImg{ position:absolute; inset:0; width:100%; height:100%; display:block;
+    filter:drop-shadow(0 26px 64px rgba(0,0,0,.7)); }
+  #cabMon{ position:absolute; left:var(--sl); top:var(--st); width:var(--sw); height:var(--sh);
+    background:#000; overflow:hidden; border-radius:.5vh; }
+  #cabMon iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; }
+  #cabVig{ position:absolute; left:var(--sl); top:var(--st); width:var(--sw); height:var(--sh);
+    pointer-events:none; border-radius:.5vh; box-shadow:inset 0 0 60px 12px rgba(0,0,0,.6);
+    background:radial-gradient(130% 120% at 50% 46%, transparent 62%, rgba(0,0,0,.4)); }
+
+  /* ===== ?bare — full-screen live canvas, no cabinet ===== */
+  body.bare #room, body.bare #deck, body.bare #monVig{ display:none; }
+  body.bare #stage{ width:100vw; }
+  body.bare #mon{ aspect-ratio:auto; height:100vh; border-radius:0; box-shadow:none; }
+
+  /* ===== BOOT: Ken Burns push into the cab beauty → the LOGO card ===== */
+  #boot{ position:fixed; inset:0; z-index:20; background:#000; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:opacity .9s ease; }
+  #boot.gone{ opacity:0; pointer-events:none; }
+  /* the cab beauty render, slow PUSH toward the dark screen (~46%,53% of the art) */
+  #kb{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    transform-origin:46% 53%; animation:kenburns 9s ease-out forwards; }
+  @keyframes kenburns{ 0%{ transform:scale(1.02); filter:brightness(.92); }
+    100%{ transform:scale(1.52); filter:brightness(.62); } }
+  #boot::after{ content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 100% at 46% 52%, transparent 34%, rgba(0,0,0,.78)); }
+  /* the LOGO card rises over the darkening push */
+  #logo{ position:relative; z-index:2; text-align:center; opacity:0; padding:0 6vw;
+    animation:logoIn 1.4s ease 2.4s forwards; }
+  #logo .pre{ color:var(--cyan); letter-spacing:6px; font-weight:700; font-size:clamp(9px,1.6vw,15px); opacity:.85; }
+  #logo .t{ font-weight:900; font-style:italic; line-height:.92; color:var(--gold);
+    font-size:clamp(34px,8vw,92px); letter-spacing:1px; margin:.12em 0 .1em;
+    text-shadow:0 2px 0 #000, 0 0 36px rgba(216,162,58,.5); }
+  #logo .whoa{ color:var(--blood); font-weight:900; font-style:italic; letter-spacing:1px;
+    font-size:clamp(13px,2.6vw,26px); text-shadow:0 0 24px rgba(181,35,43,.5); }
+  #logo .ci{ margin-top:1.3em; color:var(--amber); font-weight:800; letter-spacing:4px;
+    font-size:clamp(11px,1.5vw,17px); opacity:0; animation:logoIn .8s ease 4s forwards, ciBlink 1.1s steps(2,jump-none) 4s infinite; }
+  @keyframes logoIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  @keyframes ciBlink{ 50%{ opacity:.22; } }
+
+  /* auto-hiding control bar — no chrome unless you reach for it */
+  #bar{ position:fixed; top:0; left:0; right:0; z-index:12; display:flex; align-items:center;
+    gap:16px; padding:8px 16px; font-size:clamp(10px,1vw,12px); letter-spacing:2px;
+    color:#8a949e; background:linear-gradient(#000a,transparent);
+    opacity:0; transition:opacity .25s ease; pointer-events:none; }
+  #bar.show{ opacity:1; pointer-events:auto; }
+  #bar b{ color:var(--bone); } #bar .sp{ flex:1 1 auto; }
+  #bar a{ color:#8a949e; text-decoration:none; padding:.3em .7em; border:1px solid #23262e;
+    border-radius:6px; background:rgba(8,10,14,.55); transition:color .12s,border-color .12s; }
+  #bar a:hover{ color:#fff; border-color:#4a4d52; }
+</style>
+</head>
+<body>
+<div id="room"></div>
+
+<!-- PANEL VIEW (default): live monitor over the deck strip -->
+<div id="stage">
+  <div id="mon"><iframe id="game" title="game" scrolling="no" allow="gamepad; autoplay"></iframe><div id="monVig"></div></div>
+  <img id="deck" src="sprites/cabinet/mean_streets_1up_panel.png" alt="control deck — stick · WHOA! · DID YOU SEE THAT?">
+</div>
+
+<!-- CAB VIEW (opt-in ?view=cab): full beauty render w/ inset screen -->
+<div id="cabwrap">
+  <img id="cabImg" src="sprites/cabinet/mean_streets_1up_final.png" alt="I THOUGHT YOU WERE DEAD — MEAN STREETS cabinet">
+  <div id="cabMon"><iframe id="cabGame" title="game" scrolling="no" allow="gamepad; autoplay"></iframe></div>
+  <div id="cabVig"></div>
+</div>
+
+<!-- BOOT: Ken Burns push → logo -->
+<div id="boot">
+  <img id="kb" src="sprites/cabinet/mean_streets_1up_final.png" alt="">
+  <div id="logo">
+    <div class="pre">ANDERS &amp; PARTNERS PRESENT</div>
+    <div class="t">I THOUGHT<br>YOU WERE DEAD!</div>
+    <div class="whoa">WHOA, IT'S CLEVELAND BOB!</div>
+    <div class="ci">INSERT COIN — CLICK / PRESS</div>
+  </div>
+</div>
+
+<div id="bar">
+  <b id="barName">MEAN STREETS · PANEL</b>
+  <span class="sp"></span>
+  <a id="vw" href="#">VIEW ⇄</a>
+  <a id="fs" href="#">FULLSCREEN ⛶</a>
+</div>
+
+<script>
+(function(){
+  var Q = new URLSearchParams(location.search);
+  var BARE = Q.has('bare');
+  var view = Q.get('view') === 'cab' ? 'cab' : 'panel';
+  var noIntro = Q.has('nointro') || BARE;
+
+  if (BARE) document.body.classList.add('bare');
+  if (view === 'cab') document.body.classList.add('cabview');
+  document.getElementById('barName').textContent = 'MEAN STREETS · ' + (view === 'cab' ? 'CAB' : 'PANEL');
+  document.title = 'I THOUGHT YOU WERE DEAD! — MEAN STREETS (' + view + ')';
+
+  // the live engine: PANEL fills the wide monitor edge-to-edge (?embed); CAB keeps the
+  // native composition inside the inset glass. Source is set on the first gesture so the
+  // attract audio is user-unlocked.
+  var GAME_SRC = view === 'cab' ? 'index.html' : 'index.html?embed';
+  var frame = document.getElementById(view === 'cab' ? 'cabGame' : 'game');
+
+  var boot = document.getElementById('boot');
+  var armed = false;
+  function powerOn(){
+    if (armed) return; armed = true;
+    frame.src = GAME_SRC;                 // load now — the click counts as the audio gesture
+    boot.classList.add('gone');
+    setTimeout(function(){ if(boot.parentNode) boot.parentNode.removeChild(boot); }, 1000);
+    try { frame.contentWindow && frame.contentWindow.focus(); } catch(e){}
+  }
+  if (noIntro){ boot.classList.add('gone'); if(boot.parentNode) boot.parentNode.removeChild(boot); powerOn(); }
+  else {
+    boot.addEventListener('click', powerOn);
+    addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'||e.key.length===1) powerOn(); });
+  }
+
+  // auto-hiding control bar
+  var bar = document.getElementById('bar'), hideT = null;
+  function flash(){ bar.classList.add('show'); clearTimeout(hideT);
+    hideT = setTimeout(function(){ bar.classList.remove('show'); }, 2200); }
+  addEventListener('mousemove', function(e){ if(e.clientY < 70) flash(); });
+
+  function setQ(k,v){ var q=new URLSearchParams(location.search); v==null?q.delete(k):q.set(k,v);
+    return '?' + q.toString(); }
+  document.getElementById('vw').textContent = 'VIEW: ' + (view==='cab'?'CAB':'PANEL') + ' ⇄';
+  document.getElementById('vw').addEventListener('click', function(ev){
+    ev.preventDefault(); location.search = setQ('view', view==='cab'?'panel':'cab'); });
+  function toggleFS(){ try{ document.fullscreenElement ? document.exitFullscreen()
+    : document.documentElement.requestFullscreen(); }catch(e){} }
+  document.getElementById('fs').addEventListener('click', function(ev){ ev.preventDefault(); toggleFS(); });
+  addEventListener('keydown', function(e){ if(e.key.toLowerCase()==='f') toggleFS(); });
+})();
+</script>
+</body></html>
