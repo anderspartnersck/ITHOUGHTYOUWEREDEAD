@@ -31,7 +31,11 @@
   .zone{ position:absolute; left:50%; transform:translateX(-50%); width:74%; border:2px solid transparent;
     border-radius:6px; pointer-events:none; transition:.12s; font-size:clamp(9px,1.5vh,13px);
     color:var(--dim); text-align:right; padding-right:6px; }
-  #zHEAD{ top:6%; height:20%; } #zCENTER{ top:30%; height:34%; } #zWING{ top:66%; height:26%; }
+  /* TARGET SIZES (0928): the head is SMALL (the gamble), center mass BIG (the sure thing), the wing between.
+     A shot outside every zone is WIDE — a miss. */
+  #zHEAD{ top:4%; height:16%; width:30%; } #zCENTER{ top:23%; height:40%; width:60%; } #zWING{ top:65%; height:27%; width:74%; }
+  /* the SHOULDER: late, but it never lies — his gun arm swings to where he'll really shoot */
+  .zone.shoulder{ border-left:5px solid #f0d49a; box-shadow:-10px 0 18px -6px rgba(240,212,154,.55); color:#f0d49a; }
   .zone.sel{ border-color:var(--gold); color:var(--gold); box-shadow:0 0 18px rgba(216,162,58,.35) inset; }
   .zone.read{ border-color:var(--blood); color:#e88; box-shadow:0 0 18px rgba(181,35,43,.4) inset; }
 
@@ -170,13 +174,73 @@
     16%{ opacity:1; transform:translate(-50%,-50%) scale(1.16); }
     30%{ transform:translate(-50%,-50%) scale(1); } 72%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1.02); } }
   #prompt .k{ cursor:pointer; user-select:none; }
+
+  /* ===== THE BODY IS THE INTERFACE (0928) ===== */
+  /* his GUARD drifts to your habit — the CPU guards your most-used lane; now you can SEE it */
+  .zone.guard{ border:2px dashed rgba(181,35,43,.55); color:#c77; }
+  /* the body: a false twitch during "steady…" (a feint — don't bite) */
+  #man.twitch{ animation:twitch .22s steps(2) 1; }
+  @keyframes twitch{ 0%,100%{ transform:translate(-50%,-50%); } 50%{ transform:translate(-48.5%,-50.6%) rotate(-1.2deg); } }
+  /* the stare — he looks straight at Bob */
+  #man.stare pre{ color:#f0e6cc; text-shadow:0 0 16px rgba(255,255,255,.25), 0 0 10px rgba(0,0,0,.95); }
+  /* the pair (THE SEVEN-JOHNS) — two men side by side */
+  #man.pair{ width:62%; }
+  /* THE PRESIDENT — the other man in frame (a target you can choose) */
+  #pres{ position:absolute; left:80%; top:44%; transform:translate(-50%,-50%); z-index:2; display:none;
+    font-family:ui-monospace,Menlo,monospace; white-space:pre; line-height:1.05; font-size:clamp(9px,1.8vh,17px);
+    color:#9fb3d9; text-shadow:0 0 12px rgba(0,0,0,.95); cursor:crosshair; }
+  #pres.on{ display:block; } #pres.aim{ color:#e7c98a; text-shadow:0 0 16px rgba(216,162,58,.5); }
+  #pres.down{ color:var(--blood); transform:translate(-50%,-44%) rotate(4deg); opacity:.8; }
+  /* the draw clock — quick-draw sport shows the times */
+  #clock{ position:absolute; left:0; right:0; top:26%; text-align:center; font-family:ui-monospace,Menlo,monospace;
+    font-size:clamp(11px,2vh,17px); color:#b9bcc6; letter-spacing:1px; pointer-events:none; min-height:1.3em; }
+  #clock b{ color:var(--gold); } #clock .late{ color:var(--blood); }
+  /* WHOA! — time nearly stops; the button lights */
+  #scene.slowmo #world .bg{ filter:brightness(.12) blur(4px) saturate(.3) sepia(.6); }
+  #scene.slowmo #man pre{ filter:contrast(1.3); }
+  #whoabtn{ display:inline-block; font-weight:900; font-style:italic; color:#000; background:var(--gold);
+    padding:0 .5em; border-radius:4px; box-shadow:0 0 22px var(--gold); animation:blink .2s steps(1) infinite; }
+  /* HEY BOB, SMILE! — the flash, and the afterimage you have to read through */
+  #whiteout{ position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0; background:#fff; }
+  #whiteout.pop{ animation:whiteout 2.4s ease-out forwards; }
+  @keyframes whiteout{ 0%{ opacity:1; } 18%{ opacity:.96; } 55%{ opacity:.55; } 100%{ opacity:.18; } }
+  #man.burn pre{ color:#3a2a1a; text-shadow:0 0 30px #fff, 0 0 60px #ffe9b0; filter:blur(1.2px); }
+  /* Bob's own wound — the hand shakes and bleeds */
+  #hand.hurt{ color:#6a2226; animation:shaky .35s steps(2) infinite; }
+  @keyframes shaky{ 0%,100%{ transform:translateX(-50%); } 50%{ transform:translateX(-49%) translateY(1px); } }
+  /* LIFE — two pips each. You can't take more than two: a wing takes one, a head or chest takes both. */
+  .pips{ letter-spacing:2px; color:var(--gold); } .pips .gone{ color:#3a2020; } .pips.hurt{ color:var(--blood); }
+  /* THE GUN-BARREL IRIS — the Bond barrel / the killer-mask POV: it tightens on "steady…" and snaps open on DRAW! */
+  @property --iris { syntax:'<percentage>'; inherits:false; initial-value:75%; }
+  #iris{ position:absolute; inset:0; z-index:4; pointer-events:none; --iris:75%; opacity:0;
+    transition: --iris .55s cubic-bezier(.2,.8,.2,1), opacity .35s;
+    background: radial-gradient(circle at 50% 44%, transparent var(--iris), rgba(0,0,0,.94) calc(var(--iris) + 3%)),
+      repeating-conic-gradient(from 0deg at 50% 44%, rgba(255,240,210,.045) 0deg 5deg, transparent 5deg 15deg); }
+  #iris.tight{ --iris:30%; opacity:1; } #iris.open{ --iris:78%; opacity:.85; transition-duration:.12s; }
+  /* CRITICAL — you've been shot once. One more and you're done: the edges throb red, the frame won't sit still,
+     and your hand (the sway) never settles. Presentation of the engine's one wound bit. */
+  #crit{ position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0;
+    background:radial-gradient(ellipse at 50% 45%, transparent 48%, rgba(150,10,18,.55) 82%, rgba(90,0,8,.85) 100%); }
+  #scene.critical #crit{ animation:throb 1.05s ease-in-out infinite; }
+  @keyframes throb{ 0%,100%{ opacity:.35; } 12%{ opacity:.95; } 24%{ opacity:.5; } 36%{ opacity:.85; } }
+  #scene.critical{ animation:critshake 2.6s steps(12) infinite; }
+  @keyframes critshake{ 0%,100%{ transform:none; } 20%{ transform:translate(1px,-1px); } 40%{ transform:translate(-1px,1px); }
+    60%{ transform:translate(1px,1px); } 80%{ transform:translate(-1px,0); } }
+  #hBob.hurt::after{ content:" CRITICAL"; color:var(--blood); animation:blink .5s steps(1) infinite; }
+  /* the OPEN LOW warning after a feint nobody bought */
+  .zone.open{ border:2px solid var(--blood); color:var(--blood); animation:blink .3s steps(1) infinite; }
+  #overlay pre.scene{ font-family:ui-monospace,Menlo,monospace; color:#cdd; font-size:clamp(9px,1.9vh,17px); line-height:1.15; white-space:pre; text-align:left; margin:.2em auto; }
+  /* the roulette cylinder */
+  .cyl{ font-family:ui-monospace,Menlo,monospace; font-size:clamp(18px,4vh,34px); letter-spacing:.3em; white-space:pre; }
+  .cyl .live{ color:var(--blood); text-shadow:0 0 12px var(--blood); } .cyl .empty{ color:#556; }
+  .cyl .fired{ color:#888; text-decoration:line-through; }
 </style>
 </head>
 <body>
 <div id="cab"><div id="scene">
   <div id="world"><div class="bg"></div><div class="grade"></div></div>
   <div id="crowd"></div>
-  <div id="hud"><div>RECORD <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div></div>
+  <div id="hud"><div>BOB <b id="hBob" class="pips">▮▮</b></div><div>RECORD <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div><div>HIM <b id="hHim" class="pips">▮▮</b></div></div>
   <div id="poem">— · — · —</div>
 
   <div id="man"><pre id="manArt"></pre>
@@ -184,7 +248,12 @@
     <div class="zone" id="zCENTER">CENTER MASS</div>
     <div class="zone" id="zWING">WING ↓</div>
   </div>
+  <div id="pres"></div>
   <div id="hand">════╝</div>
+  <div id="clock"></div>
+  <div id="whiteout"></div>
+  <div id="iris"></div>
+  <div id="crit"></div>
   <div id="aim"></div>
   <div id="deadeye"><div class="dl"></div><div class="ds"></div></div>
 
@@ -200,8 +269,12 @@
 <script type="module">
 import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STANCES,
   HEAD, CENTER, WING, STRONG, OFF, GRAZE, KILL, WINGED, MISFIRE,
-  resolveStrike, resolveWhoa, label, hunter, STAGES, DECISIONS_PER_STAGE, SONNET_LENGTH } from "./engine.mjs";
-import { STAGE_BOSS, SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE } from "./game.mjs";
+  resolveStrike, resolveWhoa, label, STAGES, DECISIONS_PER_STAGE, SONNET_LENGTH,
+  WINGED_SLOW, LEGEND_LOUD, CHAMBERS, bulletsFor, beatOpponent,
+  PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST } from "./engine.mjs";
+import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES } from "./rig.mjs";
+import { SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE,
+  SCORE_PRESIDENT, beatScore } from "./game.mjs";
 
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -280,36 +353,77 @@ function wingedFigureFor(char){
   return WINGED_MAN;
 }
 const isBossChar = char => !!(char && (char.name==="THE MARSHAL" || char.name==="THE BATTER"));
-const drawMan = (char, winged) => {
-  $("man").classList.remove("down");
-  let art;
-  if (winged) art = wingedFigureFor(char);                        // the hunched, bleeding silhouette
-  else { art = figureFor(char); if (art===MAN) art = art.replace("WPN", char && char.weapon===BAT ? "/===" : "·-=≡"); }
-  $("manArt").textContent = art;
+// THE EYES are gameplay data: an overlay on a neutral face. ˙ ˙ = looking HIGH (your head),
+// • • = level (center), . . = LOW (the wing), ◉ ◉ = staring straight at Bob. Honest only sometimes.
+// each boss reads differently — the one-line signature shown when he steps into frame
+const BOSS_TELL = { "THE MARSHAL":"he's been studying you — watch his guard", "THE BATTER":"the barbs — even a wing kills" };
+const mostCommon = arr => { if(!arr||!arr.length) return null; const c={}; let best=null,bn=0;
+  for(const x of arr){ c[x]=(c[x]||0)+1; if(c[x]>bn){bn=c[x]; best=x;} } return best; };
+// THE RIG (rig.mjs) — every figure is a named STATE of a rig + the EYE overlay; sprites map over these names.
+const EYE_WORD = RIG_EYE_WORD;
+const POSE = { char:null, state:"idleA", eyes:null, winged:false, breathing:false, pair:null };
+function figureArt(char, winged, eyes, state){
+  const st = state || (winged ? "winged_idle" : "idleA");
+  return frame(char, st, eyes);
+}
+function render(){
+  if (POSE.pair) return;
+  $("manArt").textContent = figureArt(POSE.char, POSE.winged, POSE.eyes, POSE.state);
+}
+const drawMan = (char, winged, eyes=null, state=null) => {
+  $("man").classList.remove("down","pair");
+  Object.assign(POSE, { char, winged, eyes, state: state || (winged ? "winged_idle" : "idleA"), pair:null });
+  render();
   $("man").classList.toggle("winged", winged);
   $("man").classList.toggle("boss", isBossChar(char));
 };
-// each boss reads differently — the one-line signature shown when he steps into frame
-const BOSS_TELL = { "THE MARSHAL":"the read-wall — never repeat a lane", "THE BATTER":"the barbs — even a wing kills" };
-const mostCommon = arr => { if(!arr||!arr.length) return null; const c={}; let best=null,bn=0;
-  for(const x of arr){ c[x]=(c[x]||0)+1; if(c[x]>bn){bn=c[x]; best=x;} } return best; };
-// MARSHAL reads your pattern: before the draw, surface the lane he's leaning to GUARD (your most-
-// used lane) so a sharp shooter BREAKS pattern for the headshot. Honest — it's what drives his read.
-async function readWallTell(bob){
-  const lean = mostCommon(bob.attacks); if(!lean) return;
-  clearZones(); $("z"+lean).classList.add("read");
-  prompt(`<span class="lethal">THE MARSHAL READS YOU</span> — he's covering <b>${lean}</b>. <small>break pattern.</small>`);
-  await sleep(1150); clearZones();
+// set a pose on the current man (keeps his eyes unless given). winged men draw with their winged_* frames.
+function pose(state, eyes){
+  if (!POSE.char) return;
+  const st = POSE.winged && (state==="draw" || state==="idleA" || state==="idleB") ? (state==="draw" ? "winged_draw" : "winged_idle") : state;
+  POSE.state = st; if (eyes !== undefined) POSE.eyes = eyes; render();
 }
-// a foe's aim TELLs just before you must read him — boss-flavored, brief. Catch it, match it, block.
-async function foeAimTell(lane, char){
-  $("z"+lane).classList.add("read");
-  prompt(char && char.name==="THE BATTER"
-    ? `<span class="lethal">THE BATTER winds up…</span> <small>read where the barbs land</small>`
-    : `<small>his hand twitches…</small>`);
-  await sleep(char && char.weapon===BAT ? 680 : 500); $("z"+lane).classList.remove("read");
+// he's alive the whole time: idle A <-> idle B while breathing is on (steady…, reading)
+setInterval(() => { if (!POSE.breathing || POSE.pair) return;
+  if (POSE.state==="idleA") { POSE.state="idleB"; render(); } else if (POSE.state==="idleB") { POSE.state="idleA"; render(); } }, TIMING.breath);
+// THE SEVEN-JOHNS: two men side by side, each with his own state + eyes. A dead John is a drop.
+function drawPair(j1, j2, e1=null, e2=null, s1=null, s2=null){
+  const a = (j1.alive ? figureArt(j1.char, j1.winged, e1, s1) : FOE_DOWN).split("\n");
+  const b = (j2.alive ? figureArt(j2.char, j2.winged, e2, s2) : FOE_DOWN).split("\n");
+  const w = Math.max(...a.map(l => l.length)) + 4, n = Math.max(a.length, b.length);
+  const lines = []; for (let i=0;i<n;i++) lines.push((a[i]||"").padEnd(w) + (b[i]||""));
+  POSE.pair = [j1, j2];
+  $("man").classList.remove("down","winged","boss"); $("man").classList.add("pair");
+  $("manArt").textContent = lines.join("\n");
 }
-const dropFoe = () => { $("manArt").textContent = FOE_DOWN; $("man").classList.remove("winged"); $("man").classList.add("down");
+const PRES_ART = PRESIDENT_ART.idle.replace("{E}", "o o");
+function showPres(on, dead=false){ const p=$("pres"); p.textContent = dead ? PRESIDENT_ART.down : PRES_ART; p.classList.toggle("on", on); p.classList.toggle("down", dead); }
+// HIS GUARD drifts to your habit: the CPU guards the lane you shoot most (read_skill of the time).
+// Show it — dashed on that lane, stronger the better he reads. Spam one lane and you watch him cover it.
+function showGuard(opp, bob){
+  const lean = mostCommon(bob.attacks); LANES.forEach(l => $("z"+l).classList.remove("guard"));
+  if (!lean) return null;
+  const z = $("z"+lean); z.classList.add("guard");
+  z.style.opacity = String(Math.min(1, 0.35 + (opp.char.read_skill || 0.4)));
+  return lean;
+}
+function hideGuard(){ LANES.forEach(l => { $("z"+l).classList.remove("guard"); $("z"+l).style.opacity=""; }); }
+const clock = html => $("clock").innerHTML = html;
+// LIFE: two pips. alive+clean = ▮▮, winged = ▮▯, dead = ▯▯. (The engine's one wound bit, drawn as a bar.)
+function pips(side){ const n = !side ? 2 : !side.alive ? 0 : side.winged ? 1 : 2;
+  return `<span>${"▮".repeat(n)}</span><span class="gone">${"▯".repeat(2-n)}</span>`; }
+function critical(on){ $("scene").classList.toggle("critical", !!on); SWAY.shaky = !!on; }
+function setLife(bob, opp){
+  if (bob){ $("hBob").innerHTML = pips(bob); $("hBob").classList.toggle("hurt", !!bob.winged); critical(bob.alive && bob.winged); }
+  if (opp !== undefined){ const e = $("hHim");
+    e.innerHTML = Array.isArray(opp) ? opp.map(pips).join(" ") : pips(opp); e.classList.toggle("hurt", !Array.isArray(opp) && !!(opp && opp.winged)); }
+}
+// Bob's gun-hand, first person (rig states: idle / aim / recoil / fan / hurt / feint)
+function hand(state){ const h = $("hand"); h.textContent = HANDS[state] || HANDS.idle; }
+// the gun-barrel iris
+function iris(mode){ const i = $("iris"); i.classList.remove("tight","open"); if (mode) i.classList.add(mode); }
+const fmt = t => (t===Infinity ? "FALSE START" : t >= 9 ? "—" : t.toFixed(2)+"s");
+const dropFoe = () => { POSE.breathing = false; $("manArt").textContent = FOE_DOWN; $("man").classList.remove("winged"); $("man").classList.add("down");
   flare(); sting('kill'); sfx.roar(); };   // the killshot hard-cuts to the painted kill + crowd roar — "DID YOU SEE THAT?"
 // the WINGED beat — a wound, NOT a kill: a blood-red flash + recoil stagger on the foe figure.
 // Deliberately small (no painted hard-cut, no crowd roar) so it reads as "he's hit, still up."
@@ -318,9 +432,9 @@ function woundFX(){ const m = $("man"); m.classList.remove("wound"); void m.offs
 // muzzle flash off your gun-hand on a connecting shot, with a short stage shake
 async function muzzleFX(){
   const h = $("hand"); $("man").classList.add("shake");
-  h.textContent = "═══*✦▷"; h.classList.add("fire"); await sleep(80);
-  h.textContent = "════╝▹"; await sleep(80);
-  h.textContent = HAND; h.classList.remove("fire"); $("man").classList.remove("shake");
+  h.textContent = HANDS.recoil; h.classList.add("fire"); await sleep(80);
+  h.textContent = HANDS.recoil2; await sleep(80);
+  h.textContent = HANDS.aim; h.classList.remove("fire"); $("man").classList.remove("shake");
 }
 const setHUD = r => { $("hRec").textContent = r.surveillance; $("hLeg").textContent = r.legend; $("hScore").textContent = r.score.toLocaleString(); };
 const setPoem = n => { $("poem").textContent = Array.from({length:SONNET_LENGTH}, (_,i)=> i<n?"●":"·").join("") + `  ${n}/${SONNET_LENGTH}`; };
@@ -384,6 +498,12 @@ const sfx = {
     const s = _noise(0.13), lp = c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=520; s.connect(lp); _env(lp,0.42,0.17); s.start();
     const o = c.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(92,t);
     o.frequency.exponentialRampToValueAtTime(54,t+0.13); _env(o,0.32,0.15); o.start(); o.stop(t+0.16); }catch(e){} },
+  twitch(){ try{ const c = ac(); const s = _noise(0.03), bp = c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=900; bp.Q.value=2;
+    s.connect(bp); _env(bp,0.12,0.04); s.start(); }catch(e){} },                  // leather creak — the body lies
+  hammer(){ try{ const c = ac(); const s = _noise(0.04), bp = c.createBiquadFilter(); bp.type="highpass"; bp.frequency.value=3200;
+    s.connect(bp); _env(bp,0.35,0.05); s.start(); }catch(e){} },                  // the hammer falls
+  flash(){ try{ const c = ac(), t = c.currentTime; const o = c.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(3200,t);
+    o.frequency.exponentialRampToValueAtTime(900,t+0.25); _env(o,0.25,0.3,0.002); o.start(); o.stop(t+0.32); }catch(e){} },  // the flashbulb whine
   coins(){ try{ const c = ac(), t = c.currentTime;                                  // metallic shimmer — tokens hitting the street
     [0,0.06,0.11,0.17,0.24,0.33,0.41].forEach((dt,i) => { const f = 2300 + ((i*617)%1500);
       const o = c.createOscillator(); o.type="triangle"; o.frequency.value = f;
@@ -426,49 +546,135 @@ function zoneAtY(cy){
     const d = Math.abs(cy-mid); if (d<bd){ bd=d; best={ lane:l, center:0 }; } }
   return best;
 }
-function moveAim(cx, cy){ const s = scn().getBoundingClientRect(), a = $("aim");
-  a.style.left = (cx-s.left)+"px"; a.style.top = (cy-s.top)+"px"; if (aiming) a.classList.add("on");
-  const z = zoneAtY(cy); aimZone = z.lane; aimCenter = z.center; hoverZone(z.lane); }
+// a SHOT has to land ON him: inside a zone's box (x AND y), else it's WIDE (lane null). Centering is 2-D.
+function zoneAtXY(cx, cy){
+  for (const l of LANES){ const r = $("z"+l).getBoundingClientRect();
+    if (cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom){
+      const dx = Math.abs(cx-(r.left+r.width/2))/(r.width/2||1), dy = Math.abs(cy-(r.top+r.height/2))/(r.height/2||1);
+      return { lane:l, center: 1 - Math.min(1, Math.max(dx, dy)) }; } }
+  return { lane:null, center:0 };
+}
+// SWAY — "fast is fine, but accuracy is everything." In a SHOT the drawn crosshair = your hand + a sway that
+// SETTLES after the draw starts (τ≈0.25s). Fire early and the sway decides where it lands. A winged Bob
+// never fully settles. Render-only (the house glide pattern): the engine only ever sees the lane you hit.
+const SWAY = { on:false, t0:0, shaky:false };
+let ptrX = 0, ptrY = 0, drawnX = 0, drawnY = 0;
+function swayOffset(){
+  if (!SWAY.on) return [0,0];
+  const t = (performance.now() - SWAY.t0)/1000, H = scn().getBoundingClientRect().height;
+  const tau = SWAY.shaky ? TIMING.swayTau*1.8 : TIMING.swayTau;              // CRITICAL: settles slower…
+  const amp = H*TIMING.swayAmp*(SWAY.shaky ? 1.35 : 1)*Math.exp(-t/tau)
+            + H*(SWAY.shaky ? TIMING.swayShaky*(1 + 0.5*Math.sin(t*6.3)) : TIMING.swaySettled);   // …and never sits still (a pulse)
+  return [amp*Math.sin(t*9.1+0.6), amp*Math.sin(t*7.3+1.9)];
+}
+function placeAim(){
+  const [ox, oy] = swayOffset(); drawnX = ptrX + ox; drawnY = ptrY + oy;
+  const s = scn().getBoundingClientRect(), a = $("aim");
+  a.style.left = (drawnX-s.left)+"px"; a.style.top = (drawnY-s.top)+"px"; if (aiming) a.classList.add("on");
+  const z = SWAY.on ? zoneAtXY(drawnX, drawnY) : zoneAtY(drawnY);
+  aimZone = z.lane; aimCenter = z.center; hoverZone(z.lane);
+}
+function moveAim(cx, cy){ ptrX = cx; ptrY = cy; placeAim(); }
+(function swayLoop(){ if (SWAY.on) placeAim(); requestAnimationFrame(swayLoop); })();
+const laneCenter = l => { const r = $("z"+l).getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; };
 scn().addEventListener("pointermove", e => moveAim(e.clientX, e.clientY));
-// resolve to {lane, center} on a squeeze: tap/click a zone, Space (current hover), or a ↑●↓ key
-function aimFire(){
+// resolve to {lane, center} on a squeeze: tap/click a zone, Space (current hover), or a ↑●↓ key.
+// opts.timeout (ms) -> resolves {lane:null} if you don't squeeze in time (the READ WINDOW).
+// opts.pres -> the President is a target: clicking him (or P) resolves lane "PRES".
+// opts.shoot -> a SHOT: the crosshair sways and settles; ↑●↓ MOVE your hand to a lane (they don't fire);
+// the click / Space / FIRE button fires wherever the DRAWN crosshair is. Off every zone = WIDE (lane null).
+function aimFire(opts={}){
   return new Promise(res => {
     aiming = true; $("aim").classList.add("hot");
+    if (opts.shoot){ SWAY.on = true; SWAY.t0 = performance.now(); placeAim(); }
+    let timer = null;
     const finish = (lane, center) => {
-      scn().removeEventListener("pointerdown", pd); window.removeEventListener("keydown", kd);
-      aiming = false; $("aim").classList.remove("hot","on"); LANES.forEach(l => $("z"+l).classList.remove("aim"));
+      SWAY.on = false;
+      scn().removeEventListener("pointerdown", pd); window.removeEventListener("keydown", kd); if (timer) clearTimeout(timer);
+      aiming = false; $("aim").classList.remove("hot","on"); LANES.forEach(l => $("z"+l).classList.remove("aim")); $("pres").classList.remove("aim");
       res({ lane, center });
     };
-    const pd = e => { if (e.target.closest("#overlay")) return; e.preventDefault(); moveAim(e.clientX, e.clientY); finish(aimZone, aimCenter); };
-    const kd = e => { if (e.code in KEYLANE) finish(KEYLANE[e.code], 1); else if (e.code==="Space") finish(aimZone, aimCenter); };
+    const pd = e => { if (e.target.closest("#overlay")) return; e.preventDefault();
+      if (opts.pres && e.target.closest("#pres")) return finish("PRES", 1);
+      ptrX = e.clientX; ptrY = e.clientY; placeAim(); finish(aimZone, aimCenter); };
+    const kd = e => { if (opts.pres && e.code==="KeyP") finish("PRES", 1);
+      else if (e.code in KEYLANE){ if (opts.shoot){ const [x,y] = laneCenter(KEYLANE[e.code]); ptrX = x; ptrY = y; placeAim(); } else finish(KEYLANE[e.code], 1); }
+      else if (e.code==="Space") finish(aimZone, aimCenter); };
     scn().addEventListener("pointerdown", pd); window.addEventListener("keydown", kd);
+    if (opts.timeout) timer = setTimeout(() => finish(null, 0), opts.timeout);
   });
 }
-async function askLane(label0){
+async function askLane(label0, opts={}){
   prompt(`${label0} &nbsp; <small>point &amp; fire</small> &nbsp; <span class="k">↑</span><span class="k">●</span><span class="k">↓</span>`);
-  return (await aimFire()).lane;
+  return (await aimFire(opts)).lane;
 }
-// WHOA! — FAN THE HAMMER. The two-axis all-in becomes a double-pull: 1st pull = the kill LANE,
-// 2nd pull FANS the cylinder — aim HIGHER than the kill = STRONG (you rose into it), level/lower = OFF.
-// Reliable + arcade; keyboard works too (↑●↓ for each pull). Returns {stance, lane, clean}.
+// put the crosshair on his chest — the draw is a small vertical correction + the squeeze, not a sweep from nowhere
+function centerAim(){ const [x,y] = laneCenter(CENTER); moveAim(x, y); }
+// WHOA! — FAN THE HAMMER. 1st pull = the kill LANE, 2nd pull FANS: above the kill = STRONG, level/lower = OFF.
 async function fanTheHammer(){
   prompt(`<span class="big gold">FAN THE HAMMER!</span> &nbsp; <small>empty it — pull for the LANE…</small>`);
-  const a = await aimFire();
-  showZone(a.lane,"sel"); await muzzleFX(); sfx.shot();
+  const a = await aimFire({ timeout: 1400, shoot: true });
+  const lane = a.lane || CENTER;
+  showZone(lane,"sel"); await muzzleFX(); sfx.shot();
   prompt(`<small>…now <b>fan</b> the follow-through — <span class="k">↑ high = STRONG</span> · <span class="k">↓ low = OFF</span></small>`);
-  const b = await aimFire();
-  const stance = LANES.indexOf(b.lane) < LANES.indexOf(a.lane) ? STRONG : OFF;   // fanned above the kill = STRONG
+  const b = await aimFire({ timeout: 900, shoot: true });
+  const stance = b.lane && LANES.indexOf(b.lane) < LANES.indexOf(lane) ? STRONG : OFF;
   await muzzleFX(); sfx.shot();
-  return { stance, lane:a.lane, clean: a.center >= DEAD_EYE_TH };
+  return { stance, lane, clean: a.center >= DEAD_EYE_TH };
 }
-// the DRAW — fused: the squeeze gives timing (sec, vs his reflex) + lane + centering, all at once
-async function drawShoot(){
-  prompt(`<small>steady…</small>`);
-  await sleep(500 + Math.random()*1400);
+// THE DRAW. "steady…" is a trap: fire now and it's a FALSE START (CRACK — he stares — he draws).
+// His body may TWITCH (a feint) to bait exactly that. Then DRAW! — crosshair already on his chest.
+// Returns { t (s, Infinity on a false start), lane, center }.
+async function drawShoot(feint, opts={}){
+  prompt(`<small>steady…</small> &nbsp; <span class="k">F</span> <small>sell the shoulder</small>`); clock("");
+  iris("tight"); hand("idle"); POSE.breathing = true;
+  const wait = TIMING.steadyMin + Math.random()*TIMING.steadyRand;
+  let early = false, feinted = null;
+  const bait = e => {
+    if (e.type==="keydown" && e.code==="KeyF"){ if (!feinted && opts.onFeint) feinted = "asked"; return; }
+    if (e.type==="pointerdown" && e.button===1){ e.preventDefault(); if (!feinted && opts.onFeint) feinted = "asked"; return; }
+    if (e.type==="keydown" && !(e.code in KEYLANE) && e.code!=="Space") return;
+    if (e.target && e.target.closest && e.target.closest("#overlay")) return; early = true; };
+  window.addEventListener("keydown", bait); scn().addEventListener("pointerdown", bait);
+  const t0w = performance.now(); let twitched = !feint, twitchAt = wait*(0.35 + Math.random()*0.35), bit = false;
+  while (!early && !bit && performance.now()-t0w < wait){
+    if (!twitched && performance.now()-t0w >= twitchAt){ twitched = true;           // HIS feint: the body lies
+      const m=$("man"); m.classList.remove("twitch"); void m.offsetWidth; m.classList.add("twitch"); sfx.twitch();
+      const was = POSE.state; pose("twitch"); setTimeout(() => { if (POSE.state==="twitch") pose(was==="twitch"?"idleA":was); }, TIMING.twitch); }
+    if (feinted === "asked"){ feinted = await opts.onFeint(); if (feinted === "bit") bit = true; }   // YOUR feint
+    await sleep(16);
+  }
+  window.removeEventListener("keydown", bait); scn().removeEventListener("pointerdown", bait);
+  POSE.breathing = false;
+  if (early) return { t: Infinity, lane: null, center: 0, falseStart: true, feint: feinted };
+  centerAim(); iris("open"); hand("aim");
+  if (POSE.char && !POSE.pair && !bit) pose("draw");                                  // his hand snaps to the gun
   const t0 = performance.now();
-  prompt(`<span class="big gold">DRAW!</span> &nbsp; <small>aim &amp; fire — go for the head</small>`);
-  const r = await aimFire();
-  return { lane:r.lane, center:r.center, t:(performance.now()-t0)/1000 };
+  prompt(`<span class="big gold">DRAW!</span> &nbsp; <small>correct &amp; fire — go for the head</small>`);
+  const fired = await new Promise(res => aimFire({ timeout: TIMING.drawTimeout, pres: !!opts.pres, shoot: true }).then(r => res({ ...r, at: performance.now() })));
+  const timedOut = fired.lane === null && fired.at - t0 >= TIMING.drawTimeout - 10;
+  return { lane: fired.lane, center: fired.center, t: timedOut ? 9 : (fired.at-t0)/1000, feint: feinted, bit };
+}
+// the false start, dramatized: CRACK into the dirt. He freezes, looks at Bob. Then draws.
+async function falseStart(char, winged){
+  sfx.shot(); banner("CRACK —", "you fired early. into the dirt.", true); iris("open");
+  await sleep(TIMING.falseStartCrack); drawMan(char, winged, "BOB"); $("man").classList.add("stare"); clock(`<span class="late">FALSE START</span>`);
+  await sleep(TIMING.falseStartStare); $("man").classList.remove("stare");
+}
+// WHOA! window — you won the draw; time nearly stops and the button lights for ~600ms.
+// Press it (E / Q / right-click / cab button) to fan the hammer. Do nothing: Bob finishes the clean shot.
+async function whoaWindow(){
+  $("scene").classList.add("slowmo"); sfx.whoa();
+  prompt(`<span id="whoabtn">WHOA!</span> &nbsp; <small>E / right-click — or let the clean shot go</small>`);
+  const hit = await new Promise(res => {
+    const done = v => { window.removeEventListener("keydown", kd); window.removeEventListener("contextmenu", cm); clearTimeout(t); res(v); };
+    const kd = e => { if (e.code==="KeyE" || e.code==="KeyQ") done(true); };
+    const cm = e => { e.preventDefault(); done(true); };
+    window.addEventListener("keydown", kd); window.addEventListener("contextmenu", cm);
+    const t = setTimeout(() => done(false), TIMING.whoaWindow);
+  });
+  $("scene").classList.remove("slowmo");
+  return hit;
 }
 // on-screen choice buttons (keyboard OR tap) so a light-gun never needs a keyboard
 async function askButtons(label0, opts){
@@ -495,68 +701,184 @@ function deadEye(run, clean){
   b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
   flare(); if (clean) sfx.deye();
 }
+// THE SHOULDER — eyes come early and can lie; the torso commits late and never does. ~55% into your read
+// window his gun arm swings to the lane he'll REALLY shoot. Trust the eyes and guard early, or wait for the
+// shoulder and risk the window closing. (No shoulder in the flash — you can't see anything.) Returns a canceller.
+function shoulderCue(lane, tell, readMs){
+  if (tell === null) return () => {};
+  const t = setTimeout(() => { const z = $("z"+lane); z.classList.add("shoulder"); z.dataset.lbl = z.textContent; z.textContent = "◄══ his arm"; sfx.twitch(); }, readMs*TIMING.shoulderAt);
+  return () => { clearTimeout(t); LANES.forEach(l => { const z = $("z"+l); if (z.classList.contains("shoulder")){ z.classList.remove("shoulder"); z.textContent = z.dataset.lbl || z.textContent; } }); };
+}
+// THE FREEZE-FRAME — every shot, show BOTH halves of the read: the lane that was fired (gold) and the
+// lane that was guarded (red). "READ" = the guard met the shot; "CLEAN" = it didn't. This is how you learn.
+async function freeze(firedLane, guardLane, youShot){
+  clearZones();
+  if (guardLane) $("z"+guardLane).classList.add("read");
+  if (firedLane) $("z"+firedLane).classList.add("sel");
+  const read = firedLane && firedLane === guardLane;
+  if (youShot) banner(!firedLane ? "WIDE" : read ? "HE READ IT" : "CLEAN", `you → ${firedLane||"wide"} · his guard → ${guardLane||"—"}`, true);
+  else banner(read ? "YOU READ IT" : (guardLane ? "HE GOT PAST YOU" : "TOO SLOW"), `him → ${firedLane} · your guard → ${guardLane||"— none"}`, true);
+  await sleep(TIMING.freeze);
+}
 
 // ---- the interactive duel (mirrors engine.exchange rules, async for the human) ----
-async function exchange(eng, bob, opp, run){
-  drawMan(opp.char, opp.winged);
-  const tb = opp.ctrl.reflex(opp.char, eng.rng);
-  if (opp.char.name==="THE MARSHAL") await readWallTell(bob);   // the read-wall warns you before the draw
-  const shot = await drawShoot();                  // the fused squeeze: timing + lane + centering, one motion
-  const ta = shot.t;
-  const youFirst = ta <= tb;
-  const attacker = youFirst ? bob : opp, reader = youFirst ? opp : bob;
-  banner(youFirst ? "YOU'RE FIRST" : `${opp.char.name} IS FIRST`, youFirst ? "take the shot" : "read him", true);
-  await sleep(450);
-
-  // WHOA offer (only the human, only when available)
-  let whoa = false;
-  if (youFirst && bob.whoa_available) whoa = await askYesNo("WHOA! — the all-in?");
-
-  if (!whoa){
-    let lane, read, clean = false;
-    // you won the draw → the lane you squeezed during DRAW *is* your shot (no second prompt)
-    if (youFirst){ lane = shot.lane; clean = shot.center >= DEAD_EYE_TH; showZone(lane,"sel"); read = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng); }
-    else { lane = attacker.ctrl.attack_lane(attacker.char, reader.reads, eng.rng);   // his shot is locked; TELL it, then you read
-      await foeAimTell(lane, attacker.char);
-      read = await askLane("READ HIM — where does he aim?"); showZone(read,"read"); $("z"+lane).classList.add("sel"); }  // keep your read marker; ADD his actual lane
-    attacker.attacks.push(lane); reader.reads.push(read);
-    let out = resolveStrike(lane, read); if (out===WINGED && attacker.char.wing_kills) out = KILL;
-    await sleep(350);
-    if (attacker===bob && out!==GRAZE) await muzzleFX();   // your shot connects — flash the gun-hand
-    // DEAD-EYE (cosmetic): your HEAD-lane kill is the headshot — Bob's natural gift. CENTER is just a kill.
-    if (run){ if (attacker===bob && out===KILL && lane===HEAD) deadEye(run, clean); else if (attacker===bob) run.deadeye = 0; }
-    return land(reader, out, attacker, lane, read);
+// opts.alt = THE PRESIDENT in frame (a target you may choose). opts.first = force who draws (the flash).
+// opts.readMs = your READ WINDOW once he's drawn on you.
+async function exchange(eng, bob, opp, run, opts={}){
+  const readMs = opts.readMs || TIMING.readWindow;
+  SWAY.shaky = bob.winged; bob.exposed = false; opp.exposed = false;
+  drawMan(opp.char, opp.winged); setLife(bob, opp); hand(bob.winged ? "hurt" : "idle");
+  let attacker, shot = null;
+  if (opts.first){ attacker = opts.first; }
+  else {
+    showGuard(opp, bob);                                          // his guard, drifting to your habit
+    let tb = opp.ctrl.reflex(opp.char, eng.rng); if (opp.winged) tb += WINGED_SLOW;
+    const feint = !!(opp.char.feint && eng.rng.random() < opp.char.feint);
+    // YOUR shoulder feint (F / middle-click / cab button 2): if he bites he fires into the dirt and the draw
+    // is yours; if he doesn't, you're slower AND open low — a wing will kill you this exchange.
+    const onFeint = async () => {
+      hand("feint"); sfx.twitch();
+      if (opp.ctrl.bites(opp.char, eng.rng)){
+        pose("fire"); sfx.shot(); banner("HE BIT —", "fired early, into the dirt. the draw is yours.", true);
+        await sleep(TIMING.falseStartCrack); return "bit"; }
+      bob.exposed = true; $("zWING").classList.add("open");
+      banner("HE DIDN'T BUY IT", "you're out of position — OPEN LOW", true); return "miss";
+    };
+    shot = await drawShoot(feint, { pres: !!opts.alt, onFeint });
+    let ta = shot.t; if (ta !== Infinity && bob.winged) ta += WINGED_SLOW;
+    if (shot.feint === "miss" && ta !== Infinity) ta += FEINT_COST;
+    if (shot.bit) tb = Infinity;
+    if (shot.falseStart) await falseStart(opp.char, opp.winged);
+    const youFirst = ta <= tb;
+    attacker = youFirst ? bob : opp;
+    clock(`BOB <b>${fmt(ta)}</b> &nbsp;—&nbsp; ${opp.char.name} <b>${fmt(tb)}</b>${youFirst?"":' &nbsp;<span class="late">he\'s first</span>'}`);
+    hideGuard();
   }
-  // WHOA path — FAN THE HAMMER (the all-in, two-axis: stance from the fan + lane from the kill)
-  bob.whoa_available = false; sfx.whoa();          // the all-in commits — a riser
-  const fan = await fanTheHammer();
-  const aSt = fan.stance, aLane = fan.lane;
-  const [rSt, rLane] = reader.ctrl.whoa_read(reader.char, eng.rng);
-  let out = resolveWhoa(aSt, aLane, rSt, rLane);
-  banner("WHOA!", out===KILL ? "DID YOU SEE THAT?!" : out, true); await sleep(500);
-  if (out===KILL){ reader.alive=false; sfx.shot(); dropFoe();             // the all-in lands — foe drops, painted cut
-    if (run){ if (aLane===HEAD && fan.clean) deadEye(run, true); else run.deadeye = 0; }  // a fanned HEADSHOT = the ultimate dead-eye
-    return {dead:reader, out:KILL}; }
-  if (run) run.deadeye = 0;                          // any non-kill all-in breaks the streak
-  if (out===MISFIRE){ sfx.block(); return {dead:null, out:MISFIRE}; }
-  // half-read -> Bob's DEAD-EYE second shot is guaranteed
-  const lane = attacker.ctrl.attack_lane?.(attacker.char, reader.reads, eng.rng) ?? await askLane("SECOND SHOT —");
-  const read = reader.ctrl.defend_read(reader.char, attacker.attacks, eng.rng);
-  let o2 = resolveStrike(lane, read); if (o2===WINGED && attacker.char.wing_kills) o2 = KILL;
-  return land(reader, o2, attacker, lane, read, true);
+  const reader = attacker === bob ? opp : bob;
+  banner(attacker===bob ? "YOU'RE FIRST" : `${opp.char.name} IS FIRST`, attacker===bob ? "take the shot" : "watch his eyes", true);
+
+  if (attacker === bob){
+    // WHOA — only Bob, only when available, only in a ~600ms window; nothing = the clean shot you earned
+    const whoa = bob.whoa_available && bob.char.showboat && await whoaWindow();
+    if (!whoa){
+      if (opts.alt && shot.lane === "PRES"){                       // he turned the gun on the President
+        opts.alt.alive = false; showPres(true, true); await muzzleFX(); sfx.shot(); sfx.roar(); flare(); sting('pres');
+        banner("THE PRESIDENT OF MICHIGAN", "dead. on the broadcast.", true); await sleep(1200);
+        return { dead: opts.alt, out: KILL };
+      }
+      const lane = shot.lane, clean = shot.center >= DEAD_EYE_TH;
+      if (!lane){ await freeze(null, null, true); sfx.shot(); sfx.block();       // pulled it WIDE — the sway won
+        banner("WIDE", "you pulled it. he's still out there.", true); if (run) run.deadeye = 0; await sleep(500);
+        return { dead:null, out:GRAZE }; }
+      const read = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane);
+      bob.attacks.push(lane); opp.reads.push(read);
+      const out = eng._resolve(bob, lane, read, opp);
+      await freeze(lane, read, true);
+      if (out !== GRAZE) await muzzleFX();
+      if (run){ if (out===KILL && lane===HEAD) deadEye(run, clean); else run.deadeye = 0; }
+      return land(opp, out, bob, lane, read);
+    }
+    // WHOA path — FAN THE HAMMER (the all-in, two-axis: stance from the fan + lane from the kill)
+    bob.whoa_available = false;
+    const fan = await fanTheHammer();
+    const [rSt, rLane] = opp.ctrl.whoa_read(opp.char, eng.rng);
+    const out = resolveWhoa(fan.stance, fan.lane, rSt, rLane);
+    banner("WHOA!", out===KILL ? "DID YOU SEE THAT?!" : out===MISFIRE ? "the hammer jams — he read it all" : "half — he staggers into your second shot", true); await sleep(600);
+    if (out===KILL){ opp.alive=false; sfx.shot(); dropFoe();
+      if (run){ if (fan.lane===HEAD && fan.clean) deadEye(run, true); else run.deadeye = 0; }
+      return {dead:opp, out:KILL}; }
+    if (run) run.deadeye = 0;
+    if (out===MISFIRE){ sfx.block(); return {dead:null, out:MISFIRE}; }
+    const lane2 = (await askLane("SECOND SHOT —", { timeout: 1200, shoot: true })) || CENTER;   // Bob's DEAD-EYE rebound is guaranteed
+    const read2 = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane2);
+    bob.attacks.push(lane2); opp.reads.push(read2);
+    const o2 = eng._resolve(bob, lane2, read2, opp);
+    await freeze(lane2, read2, true);
+    return land(opp, o2, bob, lane2, read2, true);
+  }
+  // HE drew first: his EYES go somewhere (honest only sometimes); you have a READ WINDOW to guard.
+  const lane = opp.ctrl.attack_lane(opp.char, bob.reads, eng.rng);
+  const tell = eng._tell(opp, lane);
+  drawMan(opp.char, opp.winged, tell === null ? "BLIND" : tell, opp.winged ? "winged_draw" : "draw"); POSE.breathing = false;
+  const cue = shoulderCue(lane, tell, readMs);
+  const read = await askLane(tell === null ? `<span class="lethal">READ HIM</span> — you can't see his eyes`
+                                          : `READ HIM — his eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: readMs });
+  cue();
+  bob.reads.push(read); opp.attacks.push(lane);
+  pose("fire"); sfx.shot(); await sleep(TIMING.firePose);                 // his muzzle flash
+  const out = eng._resolve(opp, lane, read, bob);
+  $("zWING").classList.remove("open");
+  await freeze(lane, read, false);
+  drawMan(opp.char, opp.winged);
+  return land(bob, out, opp, lane, read);
 }
-function land(reader, out, attacker, lane, read, second=false){
+async function land(reader, out, attacker, lane, read, second=false){
   const verb = label(attacker.char.weapon, lane);
   const you = reader.ctrl && reader.ctrl.is_human;          // is the PLAYER the one being struck?
-  if (out===KILL){ reader.alive=false; sfx.shot(); if(!you) dropFoe(); banner(you?"YOU'RE DEAD":"KILL", verb, true); return {dead:reader, out}; }
+  const bob = you ? reader : attacker, foe = you ? attacker : reader;
+  $("zWING").classList.remove("open");
+  if (out===KILL || (out===WINGED && reader.winged)){
+    const finished = out===WINGED;
+    reader.alive=false; sfx.shot();
+    if(!you && !POSE.pair){ pose(lane===HEAD ? "hit_head" : "hit_center", "DEAD"); await sleep(TIMING.hitPose); dropFoe(); }
+    else if (!you) { flare(); sfx.roar(); }
+    banner(you ? (finished ? "FINISHED — you're gone" : "YOU'RE DEAD") : (finished ? "FINISHED" : "KILL"), finished ? "winged again" : verb, true);
+    setLife(bob, POSE.pair || foe); return {dead:reader, out:KILL};
+  }
   if (out===WINGED){
     sfx.shot();
-    if(reader.winged){ reader.alive=false; if(!you) dropFoe(); banner(you?"FINISHED — you're gone":"FINISHED", "winged again", true); return {dead:reader, out:KILL}; }
-    reader.winged=true; sfx.wound();                          // the wet thud under the crack — a wound, not a kill
-    if(!you){ drawMan(reader.char, true); woundFX(); }         // foe hunches over the hit, blood-red flash
-    banner(you?"YOU'RE HIT":"WINGED", you?"one more and you're done":"he's one-shot now"); return {dead:null, out};
+    reader.winged=true; sfx.wound();
+    if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
+    banner(you?"CRITICAL":"WINGED", you?"you're hit. one more and you're done — your hand won't settle":"he'll be back — crippled");
+    setLife(bob, POSE.pair || foe); return {dead:null, out};
   }
-  sfx.block(); banner(you?"YOU READ IT":"BLOCKED", you?"his shot — blocked":"he read it"); return {dead:null, out:GRAZE};
+  sfx.block(); banner(you?"YOU READ IT":"BLOCKED", you?"his shot — blocked. he's still out there.":"he read it — he's still out there.");
+  setLife(bob, POSE.pair || foe); return {dead:null, out:GRAZE};
+}
+
+// THE SEVEN-JOHNS — two men at once (mirrors engine.exchange_pair). One draw, three hands; the fastest
+// acts first. Your turn = one pull per John still standing. A John's turn = his eyes, your read window.
+async function pairExchange(eng, bob, j1, j2, run){
+  drawPair(j1, j2); setLife(bob, [j1, j2]); bob.exposed = false;
+  let t1 = j1.ctrl.reflex(j1.char, eng.rng), t2 = j2.ctrl.reflex(j2.char, eng.rng);
+  const shot = await drawShoot(false);
+  drawPair(j1, j2, null, null, "draw", "draw");
+  let tb = shot.t; if (tb !== Infinity && bob.winged) tb += WINGED_SLOW;
+  if (shot.falseStart){ sfx.shot(); banner("CRACK —", "you fired early. both of them look at you.", true); await sleep(900); }
+  clock(`BOB <b>${fmt(tb)}</b> &nbsp;—&nbsp; JOHN <b>${fmt(t1)}</b> &nbsp;—&nbsp; JOHN <b>${fmt(t2)}</b>`);
+  const order = [[tb,0,bob],[t1,1,j1],[t2,2,j2]].sort((x,y)=> x[0]<y[0]?-1 : x[0]>y[0]?1 : x[1]-y[1]);
+  let firstPull = shot.lane;
+  for (const [, , who] of order){
+    if (who === bob){
+      for (const [j, side] of [[j1,"LEFT"],[j2,"RIGHT"]]){
+        if (!j.alive) continue;
+        let lane = firstPull; firstPull = null;
+        if (!lane) lane = await askLane(`PULL — the <b>${side}</b> JOHN`, { timeout: 900, shoot: true });
+        if (!lane){ banner("WIDE", `the ${side.toLowerCase()} John is still standing`, true); await sleep(400); continue; }
+        const read = j.ctrl.defend_read(j.char, bob.attacks, eng.rng, lane);
+        bob.attacks.push(lane); j.reads.push(read);
+        const out = eng._resolve(bob, lane, read, j);
+        await freeze(lane, read, true); await muzzleFX();
+        if (out===KILL || (out===WINGED && j.winged)){ j.alive=false; sfx.shot(); flare(); sfx.roar(); }
+        else if (out===WINGED){ j.winged=true; sfx.wound(); } else sfx.block();
+        drawPair(j1, j2); setLife(bob, [j1, j2]);
+      }
+    } else if (who.alive){
+      const lane = who.ctrl.attack_lane(who.char, bob.reads, eng.rng);
+      const tell = eng._tell(who, lane);
+      drawPair(j1, j2, who===j1 ? tell : null, who===j2 ? tell : null, who===j1 ? "draw" : null, who===j2 ? "draw" : null);
+      const cue = shoulderCue(lane, tell, 1400);
+      const read = await askLane(`READ the <b>${who===j1?"LEFT":"RIGHT"}</b> JOHN — his eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: 1400 });
+      cue();
+      bob.reads.push(read); who.attacks.push(lane);
+      drawPair(j1, j2, null, null, who===j1 ? "fire" : null, who===j2 ? "fire" : null); sfx.shot(); await sleep(TIMING.firePose);
+      const out = eng._resolve(who, lane, read, bob);
+      await freeze(lane, read, false); drawPair(j1, j2);
+      const r = await land(bob, out, who, lane, read);
+      if (r.dead === bob) return { dead: bob };
+    }
+  }
+  return { dead: null };
 }
 
 // ---- run ----
@@ -564,38 +886,54 @@ const STAGE_MOTIVE = STAGES;
 async function play(){
   const eng = new Engine(Math.floor(Math.random()*1e9));
   const bob = new Side(BOB, new HumanCtl());
-  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:2, deadeye:0, deadeyeBest:0 };
-  setHUD(run); setPoem(0);
+  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:2, deadeye:0, deadeyeBest:0, president_dead:false };
+  const pool = [];                                   // the men still out there
+  $("hand").classList.remove("hurt"); hand("idle"); showPres(false); setHUD(run); setPoem(0); setLife(bob, null); iris(null); critical(false);
+  await playScene("cold_open");
 
   for (let si=0; si<STAGE_MOTIVE.length; si++){
     bob.whoa_available = true;
-    hideOverlay();
+    hideOverlay(); clock("");
+    sting('duel'); iris(null);
+    await playScene("stage" + (si+1));
     banner(`STAGE ${si+1}: ${STAGE_MOTIVE[si][0]}`, "he fights " + STAGE_MOTIVE[si][1], true);
-    sting('duel');                                   // the painted standoff establishes the stage
-    if (si===2) await pressAny(`<span class="gold">THE VOLTA</span> — nothing left now but the count. <small>(any key)</small>`);
-    else await sleep(900);
 
     for (let bi=0; bi<DECISIONS_PER_STAGE; bi++){
       run.surveillance += 1; setHUD(run);
-      const boss = bi===DECISIONS_PER_STAGE-1 ? STAGE_BOSS[si] : null;
-      const opp = boss ? new Side(boss, new AIController()) : hunter(si*DECISIONS_PER_STAGE+bi+1);
-      banner(boss ? `${boss.name}` : "", boss ? (BOSS_TELL[boss.name] || "BOSS") : "", !!boss);
-      const res = await exchange(eng, bob, opp, run);
+      bob.lethal_wing = run.legend >= LEGEND_LOUD;
+      let back = null;
+      const opp = beatOpponent(si, bi, pool, (k, a) => { if (k === "returns") back = a.side; });
+      if (back){                                       // I THOUGHT YOU WERE DEAD — a man you left standing walks back in
+        drawMan(back.char, back.winged);
+        await playScene("returns", { name: back.char.name, winged: back.winged ? ", arm hanging uselessly." : "." });
+      }
+      let res;
+      if (Array.isArray(opp)){
+        await playScene("johns"); banner("THE SEVEN-JOHNS", "one pull each", true);
+        res = await pairExchange(eng, bob, opp[0], opp[1], run);
+      } else {
+        const boss = isBossChar(opp.char);
+        banner(opp.char.name, boss ? (BOSS_TELL[opp.char.name] || "BOSS") : opp.char.title, true);
+        res = await exchange(eng, bob, opp, run);
+        if (res.dead !== bob && opp.alive){ pool.push(opp); }
+      }
       clearZones();
       if (res.dead === bob){ return end(run, `DIED — ${STAGE_MOTIVE[si][0]}, beat ${bi+1}`, eng); }
-      run.cleared += 1; run.score += SCORE_DUEL[si]; setPoem(run.cleared); setHUD(run);
-      await sleep(500);
+      run.cleared += 1; run.score += beatScore(si, opp); setPoem(run.cleared); setHUD(run);
+      await sleep(TIMING.bannerBeat); iris(null);
+      await playScene("camera");                        // the lens turns toward Bob
       if (await askYesNo(`<span class="gold">DID YOU SEE THAT?</span> put it on the record?`)){
         run.legend += 1; run.surveillance += 1; run.score += SCORE_ON_RECORD; setHUD(run);
       }
     }
-    if (si===0){ await story(`THE CLEVELAND WOUND`, `"…you should see the other guy. …he's also dead."<br><span class="dim">THE CITY logs it: subject CLEVELAND, male. flagged. the wrong name sticks.</span>`); }
-    if (si===1){ await meeting(eng, bob, run); }
+    if (si===0){ await playScene("wound"); }
+    if (si===1 && await thePresident(eng, bob, run)) return end(run, "DIED — THE PRESIDENT'S MAN", eng);
+    if (si===2 && run.president_dead && await heyBobSmile(eng, bob, run)) return end(run, "DIED — HEY BOB, SMILE!", eng);
     if (si < STAGE_MOTIVE.length-1){
       if (run.anders_scrubs>0 && run.surveillance>0){ run.anders_scrubs--; run.surveillance=Math.max(0,run.surveillance-3); setHUD(run);
-        await story("ANDERS & PARTNERS", `"We're sorry, Bob. It's all we can do.<br>We're dying slowly. You're living in the moment."`); }
+        await playScene("anders"); }
       run.score += BONUS_BASE[si]; setHUD(run);
-      coinRain(); sfx.coins(); flare();                  // the crowd throws coins — ASCII token-rain + metallic shimmer
+      coinRain(); sfx.coins(); flare();
       await story("✶ BONUS ✶", `the crowd throws coins — <span class="gold">+${BONUS_BASE[si]}</span>`);
     }
   }
@@ -603,20 +941,45 @@ async function play(){
   return couplet(eng, bob, run);
 }
 
-async function meeting(eng, bob, run){
-  hideOverlay();
-  banner("THE PRESIDENT OF MICHIGAN", "“Don't kill him, Bob. Just… let them see it.”", true);
-  sting('pres');                                     // the President's broadcast cuts in
-  const moment = new Side({name:"THE PRESIDENT",title:"of Michigan",weapon:GUN,read_skill:0.50,steadiness:0,winged_second:false,wing_kills:false}, new AIController());
-  let holds=0;
+// THE PRESIDENT — two fights. His security draws on Bob; the President stands beside him for the cameras.
+// Win the draw and the shot is yours: his man — or HIM (click him / P). Shoot him and he DIES on the broadcast.
+async function thePresident(eng, bob, run){
+  hideOverlay(); clock(""); iris(null);
+  sting('pres'); await playScene("president");
+  const president = new Side(PRESIDENT, new AIController());
+  const whoa = bob.whoa_available; bob.whoa_available = false;
+  bob.lethal_wing = run.legend >= LEGEND_LOUD;
+  showPres(true);
   for (let i=0;i<2;i++){
-    const lane = await askLane("HOLD or fire — read the bait");
-    const read = moment.ctrl.defend_read(moment.char, bob.attacks, eng.rng);
-    bob.attacks.push(lane); moment.reads.push(read);
-    if (resolveStrike(lane, read)===GRAZE) holds++;
+    const guard = new Side(PRESIDENTS_MAN, new AIController());
+    banner(guard.char.name, president.alive ? "the President stands right there. you could." : "the President is dead. his man isn't.", true);
+    const res = await exchange(eng, bob, guard, run, { alt: president.alive ? president : null });
+    clearZones();
+    if (res.dead === bob){ showPres(false); bob.whoa_available = whoa; return true; }
+    if (res.dead === president){ run.president_dead = true; run.legend += 3; run.score += SCORE_PRESIDENT; setHUD(run);
+      await playScene("president_dead"); }
+    else if (!guard.alive) { run.score += Math.floor(SCORE_DUEL[1]/2); setHUD(run); }
   }
-  if (holds>=1){ run.surveillance=Math.max(0,run.surveillance-2); setHUD(run); await story("YOU HELD", "nothing for the cameras. the hunters slow down."); }
-  else { run.legend+=3; setHUD(run); await story("DID YOU SEE THAT?", "the President broadcasts it. the legend is claimed."); }
+  showPres(false); bob.whoa_available = whoa;
+  if (!run.president_dead){ run.surveillance=Math.max(0,run.surveillance-2); setHUD(run);
+    await playScene("president_held"); }
+  return false;
+}
+
+// HEY BOB, SMILE! — no stage card, no warning. A camera. A flash. The one man who understands that
+// Bob survives by LOOKING: he takes the draw, and there is nothing to read. Read through the afterimage.
+async function heyBobSmile(eng, bob, run){
+  hideOverlay(); clock(""); prompt(""); iris(null);
+  const shooter = new Side(PHOTOGRAPHER, new AIController());
+  drawMan(shooter.char, false, null, "idleA");       // a camera where his face should be — no stage card, no warning
+  banner("HEY BOB —", "", true); await sleep(750);
+  pose("flash"); banner("SMILE!", "", true); sfx.flash();
+  const w = $("whiteout"); w.classList.remove("pop"); void w.offsetWidth; w.classList.add("pop");
+  bob.lethal_wing = run.legend >= LEGEND_LOUD;
+  $("man").classList.add("burn");
+  const res = await exchange(eng, bob, shooter, run, { first: shooter, readMs: TIMING.readWindowSmile });
+  $("man").classList.remove("burn"); w.classList.remove("pop");
+  return res.dead === bob;
 }
 
 // THE BUTTON FLIPS — all game YOU pressed "DID YOU SEE THAT?" to bank legend; now the crowd
@@ -646,37 +1009,91 @@ async function crowdFlip(run){
   $("flipcount").innerHTML = `<span class="lethal">the legend you built — <b>${presses}</b> counts against the man.</span>`;
   await sleep(1100); hideOverlay();
 }
+// MY LAST RITES — RUSSIAN ROULETTE (mirrors engine.roulette). Your record LOADS the cylinder, side by
+// side, where you can see it: a quiet man 1 bullet, a legend 3. They spin it; you pull. If it clicks:
+// SPIN again, or fire the NEXT chamber. 1 bullet → spin (1/6 vs 1/5). 3 bullets → don't (1/3 vs 3/6).
+// the spin — the loaded pattern rotates past the hammer (visual only; the engine picks the chamber)
+async function spinCylinder(bullets){
+  for (let i=0;i<TIMING.cylinderSpins;i++){
+    const off = i % CHAMBERS; let h = "";
+    for (let c=0;c<CHAMBERS;c++){ const live = ((c + off) % CHAMBERS) < bullets; h += `<span class="${live?"live":"empty"}">${live?"●":"○"}</span>`; }
+    overlay(`<h1>they spin it</h1><div class="cyl">( ${h} )</div><p class="dim">▲ the hammer</p>`);
+    sfx.hammer(); await sleep(TIMING.cylinderTick + i*6);
+  }
+}
+function cylinder(bullets, firedPos=null){
+  let h = "";
+  for (let c=0;c<CHAMBERS;c++){
+    const live = c < bullets, cls = c===firedPos ? "fired" : live ? "live" : "empty";
+    h += `<span class="${cls}">${live ? "●" : "○"}</span>`;
+  }
+  return `<div class="cyl">( ${h} )</div>`;
+}
 async function couplet(eng, bob, run){
-  hideOverlay();
+  hideOverlay(); clock("");
   banner("MY LAST RITES", "the chamber — the one duel DEAD-EYE can't win", true);
   await crowdFlip(run);
-  const tilt = Math.min(0.85, 0.50 + 0.03*run.legend);
-  const loaded = Math.max(1, Math.min(5, 2 + Math.floor(run.legend/3)));
-  banner("THE CHAMBER", `they load it for the count: ${loaded}/6 live`); await sleep(900);
-  const moment = new Side({name:"THE MOMENT",title:"",weapon:GUN,read_skill:tilt,steadiness:0,winged_second:false,wing_kills:false}, new AIController());
-  let wins=0;
-  for (let i=0;i<2;i++){
-    const lane = await askLane(i===0 ? "THE SPIN — read it or don't" : "THE SPEECH CHECK — the line that could save you");
-    const read = moment.ctrl.defend_read(moment.char, bob.attacks, eng.rng);
-    bob.attacks.push(lane); moment.reads.push(read);
-    const won = resolveStrike(lane, read)!==GRAZE; wins+=won?1:0;
-    banner(won ? "— click. empty." : "— the hammer falls heavy.", "", true);
-    if(won) sfx.block(); else { sfx.shot(); flare(); }
-    await sleep(900);
+  const bullets = bulletsFor(run.legend);
+  const lead = bullets === 1 ? "a quiet man. <b>one</b> in the chamber." : `a legend. <span class="lethal"><b>three</b>, side by side.</span>`;
+  overlay(`<h1>THE CHAMBER</h1><p>${lead}</p>${cylinder(bullets)}<p class="dim">they load it where you can see it. they spin it. they hand it to you.</p><div class="start">pull — press any key</div>`);
+  await nextKey(()=>true);
+  await spinCylinder(bullets);
+  const chambers = [0,1,2,3,4,5];
+  let pos = eng.rng.choice(chambers);
+  let alive = pos >= bullets;
+  sfx.hammer();
+  if (alive){
+    overlay(`<h1>— click.</h1>${cylinder(bullets)}<p>empty. one more.</p><p class="dim">spin it again — or fire the <b>next</b> chamber?</p>`);
+    await sleep(500);
+    const spin = await askButtons("", [
+      { id:"bS", html:"SPIN", val:true,  keys:["KeyS"] },
+      { id:"bX", html:"NEXT CHAMBER", val:false, keys:["KeyN","KeyX"] }]);
+    if (spin) await spinCylinder(bullets);
+    pos = spin ? eng.rng.choice(chambers) : (pos + 1) % CHAMBERS;
+    overlay(`<h1>${spin ? "he spins it." : "the next chamber."}</h1>${cylinder(bullets)}<p class="dim">…</p>`);
+    await sleep(1100); sfx.hammer();
+    alive = pos >= bullets;
   }
+  prompt("");
+  if (alive){ sfx.block(); await playScene("the_man"); }
+  else { sfx.shot(); flare(); await playScene("the_chamber"); }
   run.cleared += 2; setPoem(run.cleared);
-  const ending = wins>=1 ? "THE MAN" : "THE CHAMBER";
+  const ending = alive ? "THE MAN" : "THE CHAMBER";
   run.score += ending==="THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER; setHUD(run);
   return end(run, ending, eng);
 }
 
 // human controller stub so opp code paths that call bob.ctrl never run during human turns
-class HumanCtl{ get is_human(){return true;} reflex(){return 0;} }
+class HumanCtl{ get is_human(){return true;} reflex(){return 0;} bites(){return false;} pick_target(){return false;} spin_again(){return false;} }
 
+// CUTSCENES (rig.mjs SCENES) — timed ASCII beats; any key skips a beat after TIMING.sceneMinBeforeSkip.
+// Each beat maps 1:1 to a painted still later. {name}/{winged} fill from vars.
+const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function holdOrSkip(ms){
+  return new Promise(res => {
+    const t0 = performance.now();
+    const done = () => { clearTimeout(t); window.removeEventListener("keydown", k); window.removeEventListener("pointerdown", k); res(); };
+    const k = () => { if (performance.now() - t0 >= TIMING.sceneMinBeforeSkip) done(); };
+    const t = setTimeout(done, ms);
+    window.addEventListener("keydown", k); window.addEventListener("pointerdown", k);
+  });
+}
+async function playScene(name, vars={}){
+  const beats = RIG_SCENES[name]; if (!beats) return;
+  const fill = t => esc(t || "").replace(/\{(\w+)\}/g, (_, v) => esc(vars[v] ?? ""));
+  for (const b of beats){
+    const o = overlay(`${b.art ? `<pre class="scene">${esc(b.art)}</pre>` : ""}${b.h ? `<h1 class="${b.cls||""}">${fill(b.h)}</h1>` : ""}${b.text ? `<p>${fill(b.text)}</p>` : ""}`);
+    o.className = "show attract";
+    await holdOrSkip(b.ms);
+  }
+  hideOverlay();
+}
+window.__rig = { playScene, frame, SCENES: RIG_SCENES, TIMING, critical: on => critical(on) };
 async function story(title, body){ const o=overlay(`<h1>${title}</h1><p>${body}</p><div class="start">press any key</div>`); await nextKey(()=>true); hideOverlay(); }
 
 async function end(run, ending, eng){
-  clearZones();
+  clearZones(); iris(null); POSE.breathing = false; critical(false);
+  if (ending.startsWith("DIED")) await playScene("died", { name: ending.replace(/^DIED — /, "") });
   const man = ending==="THE MAN";
   const txt = ending.startsWith("DIED")
     ? `<p>${ending}.<br>an <span class="gold">unfinished sonnet</span>.</p>`
@@ -786,13 +1203,17 @@ function attract() {
 
 async function howTo() {
   overlay(`<h1>HOW TO PLAY</h1>
-    <p>You're a <span class="gold">natural</span>. On <span class="big gold">DRAW!</span> sweep the crosshair and
-    <span class="k">FIRE</span> — <i>where</i> you point is the shot, <i>when</i> you pull is the draw.</p>
-    <p><span class="k">HEAD</span> = the <span class="gold">headshot</span> — your gift, the legend.
-    <span class="k">CENTER</span> = an honest kill. <span class="k">WING</span> = just a wound.<br>
-    Miss his guard and it lands. Win the draw and the beat can't kill you.</p>
-    <p><span class="k">WHOA!</span> the all-in once a stage — <b>fan the hammer</b>: pull the lane, then fan <span class="k">↑</span> STRONG / <span class="k">↓</span> OFF. <span class="gold">DID YOU SEE THAT?</span> = legend — but the legend damns your ending.</p>
-    <p class="dim">point &amp; click (or ↑●↓). 3 stages × 4 reads + the couplet = 14. You are meant to lose.</p>
+    <p><b>Watch the man.</b> His <b>body</b> says <i>when</i> — don't bite on the twitch: fire during <i>steady…</i> and it's a false start.
+    His <b>eyes</b> say <i>where</i> — mostly. <span class="k">˙ ˙</span> high · <span class="k">• •</span> level · <span class="k">. .</span> low.</p>
+    <p>On <span class="big gold">DRAW!</span> the crosshair's on his chest — correct and <span class="k">FIRE</span>.
+    <span class="k">HEAD</span> = the headshot, the legend. <span class="k">CENTER</span> = the honest kill. <span class="k">WING</span> = a wound — he'll be back.</p>
+    <p>His dashed guard drifts to <i>your</i> habit. Break pattern. If he's first: his <b>eyes</b> come early and can lie —
+    his <b>shoulder</b> swings late and never does. Guard before the window closes.</p>
+    <p class="dim">Fast is fine, but accuracy is everything: the crosshair sways after the draw and settles. The head is small. Pull it wide and you miss.</p>
+    <p><span class="k">F</span> during <i>steady…</i> sells your shoulder: if he bites he fires into the dirt and the draw is yours —
+    if he doesn't, you're slower and <span class="lethal">open low</span> (a wing kills you). Readers don't bite.</p>
+    <p>Win the draw and <span class="k">WHOA!</span> lights for an instant — <span class="k">E</span> / right-click to fan the hammer. <span class="gold">DID YOU SEE THAT?</span> = legend; a legend loads the gun.</p>
+    <p class="dim">KILL removes him. WING changes him. BLOCK postpones him. 4 stages × 3 + the couplet = 14. You are meant to lose.</p>
     <div class="start">click / press any key — drop the quarter</div>`);
   await nextKey(() => true); hideOverlay();
 }
@@ -818,6 +1239,12 @@ function startGamepad(){
         const dir = v <= -DZ ? -1 : (v >= DZ ? 1 : 0);          // UP=HEAD(ArrowUp), DOWN=WING(ArrowDown)
         if (dir !== lastDir){ if (dir === -1) key("ArrowUp"); else if (dir === 1) key("ArrowDown"); lastDir = dir; }
         const fire = !!(window.Ghost ? Ghost.btn(gp, 0) : false);
+        const whoaB = !!(window.Ghost ? Ghost.btn(gp, 1) : false);          // button 1 = WHOA!
+        if (whoaB && !startGamepad._w) window.dispatchEvent(new KeyboardEvent("keydown", { key:"e", code:"KeyE", bubbles:true }));
+        startGamepad._w = whoaB;
+        const feintB = !!(window.Ghost ? Ghost.btn(gp, 2) : false);        // button 2 = sell the shoulder (feint)
+        if (feintB && !startGamepad._f) window.dispatchEvent(new KeyboardEvent("keydown", { key:"f", code:"KeyF", bubbles:true }));
+        startGamepad._f = feintB;
         if (fire && !lastFire) key(" ");                               // rising-edge FIRE / advance / coin
         lastFire = fire;
       }

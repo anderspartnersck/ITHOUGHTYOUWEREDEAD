@@ -21,15 +21,26 @@ accountant, discovers when the world ends that he is preternaturally good at
 killing people in duels, and the half of him that's still a normal man cannot
 survive the notoriety.
 
-**You are meant to lose.** It's a descent: about 96% of runs die before the table.
+**You are meant to lose.** It's a descent: most runs die before the table.
 A good run is the rare thing the crowd comes to see. Legend pays in points but
 tilts your ending toward death — the high-score chase and the good ending pull
 against each other.
 
 ## How to play
 
-**W / S** or **↑ / ↓** to read and commit; **Y / N** answer the prompts; **C** continues.
-The game tells you what it wants on screen — it's built to be picked up cold.
+**Watch the man.** His body says *when* — fire during *steady…* and it's a false start. His **eyes**
+say *where*, but only honestly some of the time; his **shoulder** swings late and never lies.
+
+- **Mouse / light-gun:** on **DRAW!** correct the crosshair and click. The head is small, center mass is big,
+  and the crosshair sways until it settles — rush it and you pull it wide.
+- **↑ ● ↓ / W S** move your aim; **Space** fires. **F** (or middle-click) sells your shoulder — if he bites,
+  the draw is yours; if not, you're open low.
+- **E** (or right-click) in the instant after you win the draw: **WHOA!** — fan the hammer.
+- **Y / N** answer **DID YOU SEE THAT?** — legend pays points and loads the gun at the end.
+
+Kill removes a man. Wing changes him. Block postpones him — he'll walk back in: *I thought you were dead!*
+Four stages of three duels, the President, and the roulette. Every screen is ASCII for now; the paintings
+map over it later.
 
 The bare URL boots the game. The MEAN STREETS cabinet, with the baked panel art,
 is at **[cab_desktop.html](cab_desktop.html)**.
