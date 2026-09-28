@@ -416,18 +416,19 @@ const A = {
 };
 
 // ---------------------------------------------------------------- CUTSCENES (timed beats)
-// Each beat: { art?, h?, text?, ms, cls? }. {name}/{winged} are filled by the caller (vars).
+// Each beat: { img?, art?, h?, text?, ms, cls? }. img = the painted still (sprites/attract/, cut from Joe's 0928
+// sheet); art = the ASCII fallback shown if the image is missing or fails. {name}/{winged} are filled by the caller (vars).
 // ms = how long the beat holds; any key skips after TIMING.sceneMinBeforeSkip.
 export const SCENES = {
   cold_open: [
     { h:". . .", text:"DEAD-EYE — slow and warm. a lullaby before it was a theme.", ms:1600 },
-    { art:A.kitchen, h:"FRAME ONE", text:"a kitchen. morning light. his wife pours the coffee. an ordinary day for an Anders & Partners man.", ms:3200, cls:"warm" },
-    { art:A.kitchen_grey, text:"sirens, far off. the color bleeds out of the room.", ms:2200 },
-    { art:A.street, h:"HARD CUT —", text:"a street. a man across from him, hand already moving.", ms:1800 },
-    { h:"KILL.", text:"one mismatch. he didn't even try. the look on his face is HORROR, not triumph.", ms:1700, cls:"blood" },
-    { art:A.camera, h:"\"DID YOU SEE THAT?!\"", text:"the CITY says it first. already recording. already the wrong man.", ms:2000, cls:"lethal" },
+    { img:"sprites/attract/cold_open_2_kitchen.png", art:A.kitchen, h:"FRAME ONE", text:"a kitchen. morning light. his wife pours the coffee. an ordinary day for an Anders & Partners man.", ms:3200, cls:"warm" },
+    { img:"sprites/attract/cold_open_3_bleed.png", art:A.kitchen_grey, text:"sirens, far off. the color bleeds out of the room.", ms:2200 },
+    { img:"sprites/attract/cold_open_4_street.png", art:A.street, h:"HARD CUT —", text:"a street. a man across from him, hand already moving.", ms:1800 },
+    { img:"sprites/attract/cold_open_5_horror.png", h:"KILL.", text:"one mismatch. he didn't even try. the look on his face is HORROR, not triumph.", ms:1700, cls:"blood" },
+    { img:"sprites/attract/cold_open_6_city.png", art:A.camera, h:"\"DID YOU SEE THAT?!\"", text:"the CITY says it first. already recording. already the wrong man.", ms:2000, cls:"lethal" },
     { h:"I THOUGHT YOU WERE DEAD!", text:"a CLEVELAND BOB story", ms:1800 },
-    { art:A.kitchen_grey, text:"…back to the kitchen. the theme folds back to the lullaby, and waits.", ms:2200 },
+    { img:"sprites/attract/cold_open_8_empty.png", art:A.kitchen_grey, text:"…back to the kitchen. the theme folds back to the lullaby, and waits.", ms:2200 },
   ],
   stage1: [ { art:A.street, h:"STAGE 1: DEAD-EYE", text:"he fights for FAMILY. — learn to read people.", ms:2200 } ],
   stage2: [ { art:A.street, h:"STAGE 2: THE RECORD", text:"he fights for SURVIVAL & FOOD. — now they read Bob.", ms:2200 } ],
@@ -449,11 +450,11 @@ export const SCENES = {
   johns: [ { art:A.johns, h:"THE SEVEN-JOHNS", text:"one draw. two men. one pull each.", ms:2600 } ],
   the_man: [
     { art:A.crowd, h:"— click.", text:"empty. both times.", ms:1600 },
-    { art:A.kitchen, h:"THE MAN", text:"she pulls him from the chamber. back to frame one — the kitchen.", ms:3400, cls:"warm" },
+    { img:"sprites/attract/cold_open_2_kitchen.png", art:A.kitchen, h:"THE MAN", text:"she pulls him from the chamber. back to frame one — the kitchen.", ms:3400, cls:"warm" },
   ],
   the_chamber: [
     { h:"BANG.", ms:1200, cls:"lethal" },
-    { art:A.kitchen_grey, h:"THE CHAMBER", text:"the crowd got its count. the man is gone.", ms:3400 },
+    { img:"sprites/attract/cold_open_8_empty.png", art:A.kitchen_grey, h:"THE CHAMBER", text:"the crowd got its count. the man is gone.", ms:3400 },
   ],
   died: [ { art:A.body, h:"DIED", text:"{name}", ms:2400, cls:"lethal" } ],
 };

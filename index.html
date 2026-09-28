@@ -233,6 +233,9 @@
   #hBob.hurt::after{ content:" CRITICAL"; color:var(--blood); animation:blink .5s steps(1) infinite; }
   /* the OPEN LOW warning after a feint nobody bought */
   .zone.open{ border:2px solid var(--blood); color:var(--blood); animation:blink .3s steps(1) infinite; }
+  /* painted cutscene stills (sprites/attract/) — a film frame inside the overlay; ASCII is the fallback */
+  #overlay img.still{ max-width:94%; max-height:58vh; object-fit:contain; border:1px solid rgba(216,162,58,.25);
+    box-shadow:0 0 40px rgba(0,0,0,.8); animation: rise .9s ease both; }
   #overlay pre.scene{ font-family:ui-monospace,Menlo,monospace; color:#cdd; font-size:clamp(9px,1.9vh,17px); line-height:1.15; white-space:pre; text-align:left; margin:.2em auto; }
   /* 2P — the gunman's player looks AT Bob (right panel); both players' picks are hidden keypresses */
   #p2view{ position:absolute; right:1.5%; top:12%; width:27%; z-index:3; display:none; text-align:center;
@@ -1152,12 +1155,14 @@ async function playScene(name, vars={}){
   const beats = RIG_SCENES[name]; if (!beats) return;
   const fill = t => esc(t || "").replace(/\{(\w+)\}/g, (_, v) => esc(vars[v] ?? ""));
   for (const b of beats){
-    const o = overlay(`${b.art ? `<pre class="scene">${esc(b.art)}</pre>` : ""}${b.h ? `<h1 class="${b.cls||""}">${fill(b.h)}</h1>` : ""}${b.text ? `<p>${fill(b.text)}</p>` : ""}`);
+    const still = b.img ? `<img class="still" src="${b.img}" alt="" onerror="const p=this.nextElementSibling; if(p) p.hidden=false; this.remove()">` : "";
+    const o = overlay(`${still}${b.art ? `<pre class="scene"${b.img ? " hidden" : ""}>${esc(b.art)}</pre>` : ""}${b.h ? `<h1 class="${b.cls||""}">${fill(b.h)}</h1>` : ""}${b.text ? `<p>${fill(b.text)}</p>` : ""}`);
     o.className = "show attract";
     await holdOrSkip(b.ms);
   }
   hideOverlay();
 }
+Object.values(RIG_SCENES).flat().forEach(b => { if (b.img){ const i = new Image(); i.src = b.img; } });   // preload the stills
 window.__rig = { playScene, frame, SCENES: RIG_SCENES, TIMING, critical: on => critical(on) };
 async function story(title, body){ const o=overlay(`<h1>${title}</h1><p>${body}</p><div class="start">press any key</div>`); await nextKey(()=>true); hideOverlay(); }
 
