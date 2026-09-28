@@ -42,6 +42,7 @@ const HATS = {
   seven:  "     _[ 7 ]_",
   earpc:  "      .-''-.)",
   mars:   "      ._==_.",
+  hair:   "     .~~~~~.",          // a gunwoman (pron "she") — the template body until her own sprite
 };
 
 // ---------------------------------------------------------------- THE HUNTER RIG (the template body)
@@ -296,8 +297,9 @@ export function rigFor(char){
   if (n === "THE MARSHAL") return { rig:"marshal", hat:"mars" };
   if (n === "THE BATTER") return { rig:"batter", hat:"bare" };
   if (n === "THE PHOTOGRAPHER") return { rig:"photographer", hat:"bare" };
-  if (n === "SEVEN-JOHN") return { rig:"hunter", hat:"seven" };
+  if (n === "SEVEN-JOHN" && char.pron !== "she") return { rig:"hunter", hat:"seven" };
   if (n === "THE PRESIDENT'S MAN") return { rig:"hunter", hat:"earpc" };
+  if (char && char.pron === "she") return { rig:"hunter", hat:"hair" };
   if (n === "HUNTER 1") return { rig:"hunter", hat:"bare" };
   if (n === "HUNTER 2") return { rig:"hunter", hat:"cap" };
   if (n === "HUNTER 3") return { rig:"hunter", hat:"brim" };
@@ -454,3 +456,15 @@ export const SCENES = {
   ],
   died: [ { art:A.body, h:"DIED", text:"{name}", ms:2400, cls:"lethal" } ],
 };
+
+// BOB — seen from across the street (the 2P view: the gunman's player looks AT Bob). Glasses; eyes overlay.
+export const BOB_ART = String.raw`      _____
+     |     |
+    [{L}]-[{R}]      CLEVELAND BOB
+     |  - |       Anders & Partners
+      \__/
+     /|▓▓|\__(◎)
+      |▓▓|
+      /  \ `;
+export function bobFrame(eyes){ const e = (eyes && EYES[eyes] !== undefined ? EYES[eyes] : EYES.idle);
+  return BOB_ART.replace("{L}", e[0]).replace("{R}", e[2]); }

@@ -230,6 +230,14 @@
   /* the OPEN LOW warning after a feint nobody bought */
   .zone.open{ border:2px solid var(--blood); color:var(--blood); animation:blink .3s steps(1) infinite; }
   #overlay pre.scene{ font-family:ui-monospace,Menlo,monospace; color:#cdd; font-size:clamp(9px,1.9vh,17px); line-height:1.15; white-space:pre; text-align:left; margin:.2em auto; }
+  /* 2P — the gunman's player looks AT Bob (right panel); both players' picks are hidden keypresses */
+  #p2view{ position:absolute; right:1.5%; top:12%; width:27%; z-index:3; display:none; text-align:center;
+    border:1px solid rgba(122,76,255,.45); background:rgba(8,6,16,.72); border-radius:6px; padding:.4em .3em; }
+  #p2view.on{ display:block; }
+  #p2view .who{ color:#b9a6ff; font-size:clamp(10px,1.7vh,14px); letter-spacing:1px; }
+  #p2view pre{ font-family:ui-monospace,Menlo,monospace; color:#ddd2ba; font-size:clamp(8px,1.5vh,13px); line-height:1.05; white-space:pre; text-align:left; display:inline-block; }
+  #p2view .cue{ color:#f0d49a; min-height:1.2em; font-size:clamp(10px,1.6vh,13px); }
+  .locked{ color:#8f8; letter-spacing:1px; }
   /* the roulette cylinder */
   .cyl{ font-family:ui-monospace,Menlo,monospace; font-size:clamp(18px,4vh,34px); letter-spacing:.3em; white-space:pre; }
   .cyl .live{ color:var(--blood); text-shadow:0 0 12px var(--blood); } .cyl .empty{ color:#556; }
@@ -254,6 +262,7 @@
   <div id="whiteout"></div>
   <div id="iris"></div>
   <div id="crit"></div>
+  <div id="p2view"><div class="who" id="p2who">P2</div><pre id="p2art"></pre><div class="cue" id="p2cue"></div></div>
   <div id="aim"></div>
   <div id="deadeye"><div class="dl"></div><div class="ds"></div></div>
 
@@ -271,8 +280,11 @@ import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STAN
   HEAD, CENTER, WING, STRONG, OFF, GRAZE, KILL, WINGED, MISFIRE,
   resolveStrike, resolveWhoa, label, STAGES, DECISIONS_PER_STAGE, SONNET_LENGTH,
   WINGED_SLOW, LEGEND_LOUD, CHAMBERS, bulletsFor, beatOpponent,
-  PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST } from "./engine.mjs";
-import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES } from "./rig.mjs";
+  PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST, QUICK_HAND_S, SELL_IT_SECOND,
+  PERKS, PERK_PAIRS, stageStart } from "./engine.mjs";
+import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES, bobFrame } from "./rig.mjs";
+import { tournament as _tourSim, BOUT_EXCHANGES, BOB_TELL_2P, GUNMAN_PERK_PAIRS, LINEUP, PAIR_SLOT, SEVEN_JOHN, SEVEN_JOHN_2,
+  BANGKOK_SHOTS } from "./engine.mjs";
 import { SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE,
   SCORE_PRESIDENT, beatScore } from "./game.mjs";
 
@@ -361,6 +373,9 @@ const mostCommon = arr => { if(!arr||!arr.length) return null; const c={}; let b
   for(const x of arr){ c[x]=(c[x]||0)+1; if(c[x]>bn){bn=c[x]; best=x;} } return best; };
 // THE RIG (rig.mjs) — every figure is a named STATE of a rig + the EYE overlay; sprites map over these names.
 const EYE_WORD = RIG_EYE_WORD;
+// gunman or GUNWOMAN — every line about the man across the street goes through this
+const PR = c => (c && c.pron === "she") ? { he:"she", him:"her", his:"her", He:"She", HE:"SHE", HIM:"HER", man:"woman" }
+                                        : { he:"he",  him:"him", his:"his", He:"He",  HE:"HE",  HIM:"HIM", man:"man" };
 const POSE = { char:null, state:"idleA", eyes:null, winged:false, breathing:false, pair:null };
 function figureArt(char, winged, eyes, state){
   const st = state || (winged ? "winged_idle" : "idleA");
@@ -634,7 +649,9 @@ async function drawShoot(feint, opts={}){
     if (e.type==="keydown" && e.code==="KeyF"){ if (!feinted && opts.onFeint) feinted = "asked"; return; }
     if (e.type==="pointerdown" && e.button===1){ e.preventDefault(); if (!feinted && opts.onFeint) feinted = "asked"; return; }
     if (e.type==="keydown" && !(e.code in KEYLANE) && e.code!=="Space") return;
-    if (e.target && e.target.closest && e.target.closest("#overlay")) return; early = true; };
+    if (e.target && e.target.closest && e.target.closest("#overlay")) return;
+    if (opts.nerve && opts.nerve()){ banner("COLD NERVE", "your hand stays. (once a stage)", true); return; }
+    early = true; };
   window.addEventListener("keydown", bait); scn().addEventListener("pointerdown", bait);
   const t0w = performance.now(); let twitched = !feint, twitchAt = wait*(0.35 + Math.random()*0.35), bit = false;
   while (!early && !bit && performance.now()-t0w < wait){
@@ -738,15 +755,17 @@ async function exchange(eng, bob, opp, run, opts={}){
     // is yours; if he doesn't, you're slower AND open low — a wing will kill you this exchange.
     const onFeint = async () => {
       hand("feint"); sfx.twitch();
-      if (opp.ctrl.bites(opp.char, eng.rng)){
-        pose("fire"); sfx.shot(); banner("HE BIT —", "fired early, into the dirt. the draw is yours.", true);
+      if (opp.ctrl.bites(opp.char, eng.rng) || (bob.perks.has("SELL_IT") && eng.rng.random() < SELL_IT_SECOND)){  // SELL IT: a second chance
+        pose("fire"); sfx.shot(); banner(`${PR(opp.char).HE} BIT —`, "fired early, into the dirt. the draw is yours.", true);
         await sleep(TIMING.falseStartCrack); return "bit"; }
       bob.exposed = true; $("zWING").classList.add("open");
-      banner("HE DIDN'T BUY IT", "you're out of position — OPEN LOW", true); return "miss";
+      banner(`${PR(opp.char).HE} DIDN'T BUY IT`, "you're out of position — OPEN LOW", true); return "miss";
     };
-    shot = await drawShoot(feint, { pres: !!opts.alt, onFeint });
-    let ta = shot.t; if (ta !== Infinity && bob.winged) ta += WINGED_SLOW;
-    if (shot.feint === "miss" && ta !== Infinity) ta += FEINT_COST;
+    const nerve = () => (bob.perks.has("COLD_NERVE") && bob.nerve > 0) ? (bob.nerve--, true) : false;
+    shot = await drawShoot(feint, { pres: !!opts.alt, onFeint, nerve });
+    let ta = shot.t; if (ta !== Infinity && bob.winged && !bob.perks.has("COLD_NERVE")) ta += WINGED_SLOW;
+    if (ta !== Infinity && bob.perks.has("QUICK_HAND")) ta -= QUICK_HAND_S;
+    if (shot.feint === "miss" && ta !== Infinity && !bob.perks.has("SELL_IT")) ta += FEINT_COST;
     if (shot.bit) tb = Infinity;
     if (shot.falseStart) await falseStart(opp.char, opp.winged);
     const youFirst = ta <= tb;
@@ -779,7 +798,7 @@ async function exchange(eng, bob, opp, run, opts={}){
       return land(opp, out, bob, lane, read);
     }
     // WHOA path — FAN THE HAMMER (the all-in, two-axis: stance from the fan + lane from the kill)
-    bob.whoa_available = false;
+    if (bob.whoa_spare > 0) bob.whoa_spare--; else bob.whoa_available = false;   // TWO WHOAS
     const fan = await fanTheHammer();
     const [rSt, rLane] = opp.ctrl.whoa_read(opp.char, eng.rng);
     const out = resolveWhoa(fan.stance, fan.lane, rSt, rLane);
@@ -798,11 +817,11 @@ async function exchange(eng, bob, opp, run, opts={}){
   }
   // HE drew first: his EYES go somewhere (honest only sometimes); you have a READ WINDOW to guard.
   const lane = opp.ctrl.attack_lane(opp.char, bob.reads, eng.rng);
-  const tell = eng._tell(opp, lane);
+  const tell = eng._tell(opp, lane, bob);
   drawMan(opp.char, opp.winged, tell === null ? "BLIND" : tell, opp.winged ? "winged_draw" : "draw"); POSE.breathing = false;
   const cue = shoulderCue(lane, tell, readMs);
   const read = await askLane(tell === null ? `<span class="lethal">READ HIM</span> — you can't see his eyes`
-                                          : `READ HIM — his eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: readMs });
+                                          : `READ ${PR(opp.char).HIM} — ${PR(opp.char).his} eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: readMs });
   cue();
   bob.reads.push(read); opp.attacks.push(lane);
   pose("fire"); sfx.shot(); await sleep(TIMING.firePose);                 // his muzzle flash
@@ -817,6 +836,10 @@ async function land(reader, out, attacker, lane, read, second=false){
   const you = reader.ctrl && reader.ctrl.is_human;          // is the PLAYER the one being struck?
   const bob = you ? reader : attacker, foe = you ? attacker : reader;
   $("zWING").classList.remove("open");
+  if (out===WINGED && reader.flesh > 0){                   // FLESH WOUND: just a scratch
+    reader.flesh--; sfx.block(); banner(you ? "JUST A SCRATCH" : "A SCRATCH", "FLESH WOUND — once a stage", true);
+    setLife(bob, POSE.pair || foe); return {dead:null, out:GRAZE};
+  }
   if (out===KILL || (out===WINGED && reader.winged)){
     const finished = out===WINGED;
     reader.alive=false; sfx.shot();
@@ -829,10 +852,10 @@ async function land(reader, out, attacker, lane, read, second=false){
     sfx.shot();
     reader.winged=true; sfx.wound();
     if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
-    banner(you?"CRITICAL":"WINGED", you?"you're hit. one more and you're done — your hand won't settle":"he'll be back — crippled");
+    banner(you?"CRITICAL":"WINGED", you?"you're hit. one more and you're done — your hand won't settle":`${PR(reader.char).he}'ll be back — crippled`);
     setLife(bob, POSE.pair || foe); return {dead:null, out};
   }
-  sfx.block(); banner(you?"YOU READ IT":"BLOCKED", you?"his shot — blocked. he's still out there.":"he read it — he's still out there.");
+  { const q = PR(foe.char); sfx.block(); banner(you?"YOU READ IT":"BLOCKED", you?`${q.his} shot — blocked. ${q.he}'s still out there.`:`${q.he} read it — ${q.he}'s still out there.`); }
   setLife(bob, POSE.pair || foe); return {dead:null, out:GRAZE};
 }
 
@@ -843,7 +866,8 @@ async function pairExchange(eng, bob, j1, j2, run){
   let t1 = j1.ctrl.reflex(j1.char, eng.rng), t2 = j2.ctrl.reflex(j2.char, eng.rng);
   const shot = await drawShoot(false);
   drawPair(j1, j2, null, null, "draw", "draw");
-  let tb = shot.t; if (tb !== Infinity && bob.winged) tb += WINGED_SLOW;
+  let tb = shot.t; if (tb !== Infinity && bob.winged && !bob.perks.has("COLD_NERVE")) tb += WINGED_SLOW;
+  if (tb !== Infinity && bob.perks.has("QUICK_HAND")) tb -= QUICK_HAND_S;
   if (shot.falseStart){ sfx.shot(); banner("CRACK —", "you fired early. both of them look at you.", true); await sleep(900); }
   clock(`BOB <b>${fmt(tb)}</b> &nbsp;—&nbsp; JOHN <b>${fmt(t1)}</b> &nbsp;—&nbsp; JOHN <b>${fmt(t2)}</b>`);
   const order = [[tb,0,bob],[t1,1,j1],[t2,2,j2]].sort((x,y)=> x[0]<y[0]?-1 : x[0]>y[0]?1 : x[1]-y[1]);
@@ -865,7 +889,7 @@ async function pairExchange(eng, bob, j1, j2, run){
       }
     } else if (who.alive){
       const lane = who.ctrl.attack_lane(who.char, bob.reads, eng.rng);
-      const tell = eng._tell(who, lane);
+      const tell = eng._tell(who, lane, bob);
       drawPair(j1, j2, who===j1 ? tell : null, who===j2 ? tell : null, who===j1 ? "draw" : null, who===j2 ? "draw" : null);
       const cue = shoulderCue(lane, tell, 1400);
       const read = await askLane(`READ the <b>${who===j1?"LEFT":"RIGHT"}</b> JOHN — his eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: 1400 });
@@ -881,6 +905,22 @@ async function pairExchange(eng, bob, j1, j2, run){
   return { dead: null };
 }
 
+// PERKS — after stages 1-3: pick ONE of TWO (pairs measured EVEN — docs/PERKS.md). Mirrors engine.stage_end.
+async function perkPick(bob, si){
+  if (bob.perks.has("SECOND_WIND") && bob.winged){ bob.winged = false; $("hand").classList.remove("hurt"); setLife(bob);
+    await story("SECOND WIND", "he walks it off."); }
+  if (si >= PERK_PAIRS.length) return;
+  const [a, b] = PERK_PAIRS[si];
+  overlay(`<h1>PICK ONE</h1><p class="dim">both even. both help. you only get one.</p>
+    <p><span class="k">1</span> <b class="gold">${PERKS[a][0]}</b> — ${PERKS[a][1]}</p>
+    <p><span class="k">2</span> <b class="gold">${PERKS[b][0]}</b> — ${PERKS[b][1]}</p>`);
+  const pick = await askButtons("", [
+    { id:"bP1", html:PERKS[a][0], val:a, keys:["Digit1","KeyA"] },
+    { id:"bP2", html:PERKS[b][0], val:b, keys:["Digit2","KeyB"] }]);
+  bob.perks.add(pick); hideOverlay(); prompt("");
+  banner("✶ " + PERKS[pick][0], PERKS[pick][1], true); await sleep(900);
+}
+
 // ---- run ----
 const STAGE_MOTIVE = STAGES;
 async function play(){
@@ -892,7 +932,7 @@ async function play(){
   await playScene("cold_open");
 
   for (let si=0; si<STAGE_MOTIVE.length; si++){
-    bob.whoa_available = true;
+    stageStart(bob); bob.nerve = 1;                  // the all-in once a stage (+ perks)
     hideOverlay(); clock("");
     sting('duel'); iris(null);
     await playScene("stage" + (si+1));
@@ -936,6 +976,7 @@ async function play(){
       coinRain(); sfx.coins(); flare();
       await story("✶ BONUS ✶", `the crowd throws coins — <span class="gold">+${BONUS_BASE[si]}</span>`);
     }
+    await perkPick(bob, si);                         // SECOND WIND heals; then 1 of 2 perks
   }
   run.score += SCORE_REACH_TABLE; setHUD(run);
   return couplet(eng, bob, run);
@@ -1201,6 +1242,236 @@ function attract() {
   nextKey(() => true).then(() => { attractOn = false; try { AUDIO.pause(); AUDIO.currentTime = 0; } catch {} startGame(); });
 }
 
+// ======================================================================================
+// 2 PLAYERS — THE TOURNAMENT. P1 is Bob; P2 steps into each gunman/gunwoman of the lineup in turn.
+// Mirrors engine.tournament(): a bout = up to BOUT_EXCHANGES exchanges (or BANGKOK: make-or-die volleys);
+// every exchange P2's gunman SURVIVES earns P2 a perk for that gunman (1 of 2, max 2). Then SWAP SEATS and
+// play again — whoever's Bob gets further wins. Picks are HIDDEN keypresses, so one screen is fair.
+//   BOB's seat:     draw ⇧ Left-Shift · aim/guard W S X · feint Q
+//   GUNMAN's seat:  draw ⇧ Right-Shift or Enter · aim/guard I K M · feint U
+// (the Seven-Johns: the gunman's seat plays BOTH on one draw — one hand, two guns)
+// ======================================================================================
+const SEATS = [
+  { name:"P1", draw:["ShiftLeft"], lanes:{ KeyW:HEAD, KeyS:CENTER, KeyX:WING }, feint:"KeyQ", keysTxt:"⇧L draw · W S X · Q feint" },
+  { name:"P2", draw:["ShiftRight","Enter"], lanes:{ KeyI:HEAD, KeyK:CENTER, KeyM:WING }, feint:"KeyU", keysTxt:"⇧R/Enter draw · I K M · U feint" },
+];
+function p2show(on){ $("p2view").classList.toggle("on", on); }
+function p2draw(gunName, gunPron, eyes, cue=""){
+  $("p2who").textContent = `${gunName} — the gunman's seat${gunPron==="she" ? " (she)" : ""}`;
+  $("p2art").textContent = bobFrame(eyes); $("p2cue").textContent = cue;
+}
+// one hidden lane pick from a seat within ms (null = no pick). Shows only "LOCKED".
+function hiddenLane(seat, ms, label){
+  return new Promise(res => {
+    const done = v => { window.removeEventListener("keydown", kd); clearTimeout(t); res(v); };
+    const kd = e => { if (e.code in seat.lanes){ e.preventDefault(); done(seat.lanes[e.code]); } };
+    window.addEventListener("keydown", kd); const t = setTimeout(() => done(null), ms);
+    if (label) prompt(label);
+  });
+}
+// both seats pick at once (Bangkok): each seat's FIRST lane key = where it fires, SECOND = where it guards.
+function hiddenVolley(ms){
+  return new Promise(res => {
+    const picks = [[], []];
+    const kd = e => { SEATS.forEach((st, i) => { if (e.code in st.lanes && picks[i].length < 2){ e.preventDefault(); picks[i].push(st.lanes[e.code]);
+      prompt(`BANGKOK — P1 <span class="locked">${"●".repeat(picks[0].length)}</span> · P2 <span class="locked">${"●".repeat(picks[1].length)}</span>`); } });
+      if (picks[0].length === 2 && picks[1].length === 2) done(); };
+    const done = () => { window.removeEventListener("keydown", kd); clearTimeout(t); res(picks); };
+    window.addEventListener("keydown", kd); const t = setTimeout(done, ms);
+  });
+}
+// THE DRAW RACE between two humans. Early draw during steady = FALSE START (unless COLD NERVE forgives it).
+// A feint (Q/U) twitches the feinter's body; if the OTHER seat then jumps early, it bit — else the feinter
+// pays: FEINT_COST slower and OPEN LOW. Returns times (s) for [bob, gun].
+async function twoDraw(bob, gun, seatB, seatG){
+  prompt(`<small>steady…</small> &nbsp; <small>${seatB.name} ${seatB.keysTxt} &nbsp;|&nbsp; ${seatG.name} ${seatG.keysTxt}</small>`);
+  iris("tight"); POSE.breathing = true; clock("");
+  const wait = TIMING.steadyMin + Math.random()*TIMING.steadyRand, t0w = performance.now();
+  const sides = [bob, gun], seats = [seatB, seatG];
+  const st = [{ early:false, t:null, feint:null, nerve: sides[0].perks.has("COLD_NERVE") ? 1 : 0 },
+              { early:false, t:null, feint:null, nerve: sides[1].perks.has("COLD_NERVE") ? 1 : 0 }];
+  let phase = "steady", tDraw = 0;
+  const kd = e => {
+    seats.forEach((seat, i) => {
+      if (seat.draw.includes(e.code)){ e.preventDefault();
+        if (phase === "steady"){ if (st[i].nerve){ st[i].nerve--; banner("COLD NERVE", `${seat.name}'s hand stays`, true); return; }
+          st[i].early = true; const o = 1-i; if (st[o].feint === "pending") st[o].feint = "bit"; }
+        else if (st[i].t === null) st[i].t = (performance.now() - tDraw)/1000; }
+      if (e.code === seat.feint && phase === "steady" && !st[i].feint){
+        st[i].feint = "pending"; sfx.twitch();
+        if (i === 1){ const was = POSE.state; pose("twitch"); setTimeout(() => { if (POSE.state === "twitch") pose(was === "twitch" ? "idleA" : was); }, TIMING.twitch); }
+        else { hand("feint"); setTimeout(() => hand("idle"), TIMING.twitch*2); }
+      }
+    });
+  };
+  window.addEventListener("keydown", kd);
+  while (phase === "steady" && performance.now()-t0w < wait && !st[0].early && !st[1].early) await sleep(16);
+  phase = "draw"; POSE.breathing = false; iris("open");
+  if (!st[0].early && !st[1].early){
+    tDraw = performance.now(); pose(gun.winged ? "winged_draw" : "draw"); hand("aim");
+    prompt(`<span class="big gold">DRAW!</span>`);
+    while ((st[0].t === null || st[1].t === null) && performance.now()-tDraw < TIMING.drawTimeout) await sleep(8);
+  }
+  window.removeEventListener("keydown", kd);
+  const T = st.map((x, i) => {
+    if (x.early) return Infinity;
+    let t = x.t === null ? 9 : x.t;
+    if (sides[i].winged && !sides[i].perks.has("COLD_NERVE")) t += WINGED_SLOW;
+    if (sides[i].perks.has("QUICK_HAND")) t -= QUICK_HAND_S;
+    return t;
+  });
+  st.forEach((x, i) => {                                     // feints resolve: bit → the other false-started
+    if (x.feint === "bit") T[1-i] = Infinity;
+    else if (x.feint === "pending" && T[i] !== Infinity){ if (!sides[i].perks.has("SELL_IT")) T[i] += FEINT_COST; sides[i].exposed = true; if (i===0) $("zWING").classList.add("open"); }
+  });
+  if (st[0].early || st[1].early){ sfx.shot(); banner("CRACK —", `${st[0].early ? seatB.name : seatG.name} fired early. into the dirt.`, true); await sleep(TIMING.falseStartCrack); }
+  clock(`BOB <b>${fmt(T[0])}</b> &nbsp;—&nbsp; ${gun.char.name} <b>${fmt(T[1])}</b>`);
+  return T;
+}
+// one exchange, two humans. Returns the side that died (or null).
+async function twoExchange(eng, bob, gun, seatB, seatG){
+  bob.exposed = gun.exposed = false;
+  drawMan(gun.char, gun.winged); p2draw(gun.char.name, gun.char.pron, null); setLife(bob, gun);
+  const [tb, tg] = await twoDraw(bob, gun, seatB, seatG);
+  const bobFirst = tb <= tg;
+  const attacker = bobFirst ? bob : gun, reader = bobFirst ? gun : bob;
+  const aSeat = bobFirst ? seatB : seatG, rSeat = bobFirst ? seatG : seatB;
+  banner(bobFirst ? "BOB IS FIRST" : `${gun.char.name} IS FIRST`, `${aSeat.name} aims — ${rSeat.name} reads`, true);
+  const lane = await hiddenLane(aSeat, 1300, `${aSeat.name}: <b>aim</b> (hidden) &nbsp; <small>${aSeat.keysTxt}</small>`);
+  if (!lane){ banner("WIDE", `${aSeat.name} never picked a lane`, true); await sleep(TIMING.freeze); $("zWING").classList.remove("open"); return null; }
+  prompt(`${aSeat.name} <span class="locked">LOCKED</span>`);
+  const tell = eng._tell(attacker, lane, reader);
+  if (bobFirst) p2draw(gun.char.name, gun.char.pron, tell, `Bob's eyes: ${EYE_WORD[tell] || "—"}`);
+  else drawMan(gun.char, gun.winged, tell, gun.winged ? "winged_draw" : "draw");
+  // the honest shoulder, late
+  const cueT = setTimeout(() => { if (bobFirst) $("p2cue").textContent += `  ·  ◄══ his arm: ${EYE_WORD[lane]}`;
+    else { const z = $("z"+lane); z.classList.add("shoulder"); } sfx.twitch(); }, TIMING.readWindow*TIMING.shoulderAt);
+  const read = await hiddenLane(rSeat, TIMING.readWindow, `${rSeat.name}: <b>guard</b> (hidden) — watch the eyes, then the shoulder`);
+  clearTimeout(cueT); LANES.forEach(l => $("z"+l).classList.remove("shoulder"));
+  attacker.attacks.push(lane); reader.reads.push(read);
+  if (!bobFirst){ pose("fire"); } sfx.shot(); await sleep(TIMING.firePose);
+  const out = eng._resolve(attacker, lane, read, reader);
+  await freeze(lane, read, bobFirst);
+  const died = eng._land(reader, out);
+  $("zWING").classList.remove("open");
+  if (died){ if (reader === gun) dropFoe(); banner(reader === bob ? "BOB IS DOWN" : "KILL", `${aSeat.name} → ${lane} · ${rSeat.name} guarded ${read || "nothing"}`, true); }
+  else if (out === WINGED){ sfx.wound(); banner(reader === bob ? "BOB — CRITICAL" : "WINGED", "one more and it's over", true); if (reader === gun) drawMan(gun.char, true); }
+  else banner(out === GRAZE && read === lane ? "READ" : "A SCRATCH", "still standing", true);
+  setLife(bob, gun); await sleep(TIMING.freeze);
+  return died ? reader : null;
+}
+// one Bangkok volley, two humans: both fire AND guard at once (hidden). Returns [bobDied, gunDied].
+async function twoVolley(eng, bob, gun){
+  drawMan(gun.char, gun.winged); p2draw(gun.char.name, gun.char.pron, null); setLife(bob, gun);
+  for (const c of ["3","2","1"]){ banner("BANGKOK RULES", c, true); await sleep(420); }
+  banner("BANG!", "fire, then guard — both at once (hidden)", true);
+  const [pb, pg] = await hiddenVolley(1800);
+  const [bF, bG] = [pb[0] || null, pb[1] || null], [gF, gG] = [pg[0] || null, pg[1] || null];
+  bob.attacks.push(bF); bob.reads.push(bG); gun.attacks.push(gF); gun.reads.push(gG);
+  const outB = bF ? eng._resolve(bob, bF, gG, gun) : GRAZE;
+  const outG = gF ? eng._resolve(gun, gF, bG, bob) : GRAZE;
+  const gunDied = bF ? eng._land(gun, outB) : false;
+  const bobDied = gF ? eng._land(bob, outG) : false;
+  sfx.shot(); sfx.shot();
+  banner(bobDied && gunDied ? "BOTH SHOTS LAND — the house wins" : bobDied ? "BOB IS DOWN" : gunDied ? "KILL" : "BOTH STANDING",
+    `P1 fired ${bF||"—"} guarded ${bG||"—"} · P2 fired ${gF||"—"} guarded ${gG||"—"}`, true);
+  if (gunDied) dropFoe(); setLife(bob, gun); await sleep(1400);
+  return [bobDied, gunDied];
+}
+// P2's gunman survived: pick 1 of 2 for this gunman (mirrors engine.gunman_perk)
+async function twoGunmanPerk(gun, seatG){
+  const k = gun.perks.size; if (k >= GUNMAN_PERK_PAIRS.length) return;
+  const [a, b] = GUNMAN_PERK_PAIRS[k];
+  overlay(`<h1>${seatG.name} — ${gun.char.name} SURVIVED</h1><p class="dim">pick one for this gunman</p>
+    <p><span class="k">1</span> <b class="gold">${PERKS[a][0]}</b> — ${PERKS[a][1]}</p><p><span class="k">2</span> <b class="gold">${PERKS[b][0]}</b> — ${PERKS[b][1]}</p>`);
+  const pick = await askButtons("", [{ id:"bG1", html:PERKS[a][0], val:a, keys:["Digit1"] }, { id:"bG2", html:PERKS[b][0], val:b, keys:["Digit2"] }]);
+  gun.perks.add(pick); if (pick === "SECOND_WIND") gun.winged = false; if (pick === "FLESH_WOUND") gun.flesh = 1;
+  hideOverlay(); prompt("");
+}
+// the Seven-Johns, two humans: the gunman's seat plays BOTH on one draw.
+async function twoPair(eng, bob, j1, j2, seatB, seatG){
+  drawPair(j1, j2); setLife(bob, [j1, j2]); p2draw("THE SEVEN-JOHNS", "he", null);
+  const [tb, tg] = await twoDraw(bob, { char:{ name:"THE SEVEN-JOHNS" }, winged:false, perks:new Set(), exposed:false }, seatB, seatG);
+  const order = tb <= tg ? ["bob","johns"] : ["johns","bob"];
+  for (const who of order){
+    if (!bob.alive) break;
+    if (who === "bob"){
+      for (const [j, side] of [[j1,"LEFT"],[j2,"RIGHT"]]){ if (!j.alive) continue;
+        const lane = await hiddenLane(seatB, 1100, `${seatB.name}: pull on the <b>${side}</b> John (hidden)`);
+        const read = await hiddenLane(seatG, 1100, `${seatG.name}: the ${side} John guards (hidden)`);
+        if (!lane) continue;
+        const out = eng._resolve(bob, lane, read, j); await freeze(lane, read, true); eng._land(j, out); drawPair(j1, j2); setLife(bob, [j1, j2]); }
+    } else {
+      for (const [j, side] of [[j1,"LEFT"],[j2,"RIGHT"]]){ if (!j.alive || !bob.alive) continue;
+        const lane = await hiddenLane(seatG, 1100, `${seatG.name}: the ${side} John aims (hidden)`);
+        if (!lane) continue;
+        const tell = eng._tell(j, lane, bob);
+        drawPair(j1, j2, j===j1 ? tell : null, j===j2 ? tell : null, j===j1 ? "draw" : null, j===j2 ? "draw" : null);
+        const read = await hiddenLane(seatB, TIMING.readWindowPair, `${seatB.name}: guard the <b>${side}</b> John — eyes: <b>${EYE_WORD[tell]}</b>`);
+        const out = eng._resolve(j, lane, read, bob); await freeze(lane, read, false); eng._land(bob, out); drawPair(j1, j2); setLife(bob, [j1, j2]); }
+    }
+  }
+  return !bob.alive;
+}
+// one ROUND: whoever sits in bobSeat plays Bob through the lineup. Returns gunmen beaten.
+async function twoRound(bangkok, bobSeat){
+  const seatB = SEATS[bobSeat], seatG = SEATS[1-bobSeat];
+  const eng = new Engine(Math.floor(Math.random()*1e9));
+  const bob = new Side({ ...BOB, tell: BOB_TELL_2P }, new HumanCtl());
+  let beaten = 0; p2show(true); setPoem(0); critical(false);
+  overlay(`<h1>ROUND — ${seatB.name} IS BOB</h1><p>${seatG.name} plays every gunman. ${bangkok ? "<span class='lethal'>BANGKOK RULES</span> — make or die." : "draw, read, survive."}</p>
+    <p class="dim">${seatB.name} (Bob): ${seatB.keysTxt}<br>${seatG.name} (gunmen): ${seatG.keysTxt}</p><div class="start">press any key</div>`);
+  await nextKey(() => true); hideOverlay();
+  for (let si=0; si<STAGES.length; si++){
+    stageStart(bob);
+    for (let bi=0; bi<DECISIONS_PER_STAGE; bi++){
+      if (si === PAIR_SLOT[0] && bi === PAIR_SLOT[1]){
+        const j1 = new Side({ ...SEVEN_JOHN, showboat:true }, new HumanCtl()), j2 = new Side({ ...SEVEN_JOHN_2, showboat:true }, new HumanCtl());
+        await playScene("johns");
+        if (await twoPair(eng, bob, j1, j2, seatB, seatG)) return beaten;
+        beaten++; setPoem(beaten); continue;
+      }
+      const gun = new Side({ ...LINEUP[si][bi], showboat:true }, new HumanCtl());
+      banner(`${gun.char.name}`, `${gun.char.title}${gun.char.pron==="she" ? " — she" : ""}`, true); await sleep(900);
+      if (bangkok){
+        let over = false;
+        for (let x=0; x<BANGKOK_SHOTS; x++){
+          const [bDied, gDied] = await twoVolley(eng, bob, gun);
+          if (bDied) return beaten;
+          if (gDied){ over = true; break; }
+          await twoGunmanPerk(gun, seatG);
+        }
+        if (!over && gun.alive && bob.winged && !gun.winged){ banner("CLOCK'S UP", "the more-wounded man falls", true); await sleep(1200); return beaten; }
+      } else {
+        for (let x=0; x<BOUT_EXCHANGES; x++){
+          const dead = await twoExchange(eng, bob, gun, seatB, seatG);
+          if (dead === bob) return beaten;
+          if (dead === gun) break;
+          await twoGunmanPerk(gun, seatG);
+        }
+      }
+      beaten++; setPoem(beaten);
+    }
+    // Bob's stage perk (pick by Bob's seat)
+    if (bob.perks.has("SECOND_WIND") && bob.winged) bob.winged = false;
+    if (si < PERK_PAIRS.length) await perkPick(bob, si);
+  }
+  return beaten;
+}
+async function twoPlayer(bangkok){
+  const scores = [0, 0];
+  for (const bobSeat of [0, 1]){
+    scores[bobSeat] = await twoRound(bangkok, bobSeat);
+    await playScene("died", { name: `${SEATS[bobSeat].name} as Bob beat ${scores[bobSeat]} of 12` });
+  }
+  p2show(false); critical(false);
+  const w = scores[0] === scores[1] ? "A DRAW — nobody walks" : `${scores[0] > scores[1] ? "P1" : "P2"} TAKES IT`;
+  overlay(`<h1>THE TOURNAMENT</h1><p>P1 as Bob: <b>${scores[0]}</b> gunmen &nbsp;·&nbsp; P2 as Bob: <b>${scores[1]}</b> gunmen</p>
+    <h1 class="gold">${w}</h1><div class="start">press any key</div>`);
+  await nextKey(() => true); boot();
+}
+window.__two = { twoPlayer };
+
 async function howTo() {
   overlay(`<h1>HOW TO PLAY</h1>
     <p><b>Watch the man.</b> His <b>body</b> says <i>when</i> — don't bite on the twitch: fire during <i>steady…</i> and it's a false start.
@@ -1217,7 +1488,17 @@ async function howTo() {
     <div class="start">click / press any key — drop the quarter</div>`);
   await nextKey(() => true); hideOverlay();
 }
-async function startGame() { await howTo(); play(); }
+async function startGame() {
+  await howTo();
+  overlay(`<h1>HOW MANY?</h1><p><span class="k">1</span> one player — the story</p>
+    <p><span class="k">2</span> two players — THE TOURNAMENT (P2 plays every gunman) &nbsp; <span class="k">B</span> two players, <span class="lethal">BANGKOK RULES</span></p>
+    <p class="dim">(any other key = one player)</p>`);
+  const k = await nextKey(() => true);
+  hideOverlay();
+  if (k === "Digit2") return twoPlayer(false);
+  if (k === "KeyB") return twoPlayer(true);
+  play();
+}
 
 // ---- ARCADE GAMEPAD (1-PLAYER) — self-contained poll loop, no engine refactor, no external lib.
 // Stick/d-pad/hat VERTICAL -> lane select (UP=HEAD, DOWN=WING, neutral=CENTER) by synthesizing the

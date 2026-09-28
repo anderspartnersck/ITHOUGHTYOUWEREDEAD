@@ -38,6 +38,14 @@ say *where*, but only honestly some of the time; his **shoulder** swings late an
 - **E** (or right-click) in the instant after you win the draw: **WHOA!** — fan the hammer.
 - **Y / N** answer **DID YOU SEE THAT?** — legend pays points and loads the gun at the end.
 
+After stages 1, 2 and 3 you pick **one of two perks**. Each pair is tested to be even.
+
+**2 PLAYERS: THE TOURNAMENT.** After HOW TO PLAY press **2** (or **B** for BANGKOK RULES). P2 steps into every
+gunman and gunwoman of the lineup; every exchange P2 survives earns that gunman a perk. Then the seats swap,
+and whoever's Bob gets further wins. Both players' picks are hidden keypresses, so one screen is fair.
+Bob's seat: Left-Shift draws, W S X aim or guard, Q feints. The gunman's seat: Right-Shift or Enter draws,
+I K M aim or guard, U feints.
+
 Kill removes a man. Wing changes him. Block postpones him — he'll walk back in: *I thought you were dead!*
 Four stages of three duels, the President, and the roulette. Every screen is ASCII for now; the paintings
 map over it later.

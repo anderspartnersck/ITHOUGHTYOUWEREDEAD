@@ -3,7 +3,7 @@
 // legend-tilted couplet. The cab UI drives this; an AI Bob + auto-record reproduces the
 // Python descent exactly. Keep the RNG-call order a faithful mirror of cleveland_bob.play_run.
 import { Engine, Side, AIController, BOB, GUN, STAGES, DECISIONS_PER_STAGE, SONNET_LENGTH,
-         resolveStrike, GRAZE, KILL, PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, beatOpponent, fightBeat, ch, roulette, bulletsFor, LEGEND_LOUD } from "./engine.mjs";
+         resolveStrike, GRAZE, KILL, PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, beatOpponent, fightBeat, ch, roulette, bulletsFor, LEGEND_LOUD, stageStart, stageEnd } from "./engine.mjs";
 
 export const SCORE_DUEL = [100, 250, 500, 750];        // a KILL; a wing pays half, a block a quarter
 export const SCORE_ON_RECORD = 150, SCORE_REACH_TABLE = 1000, SCORE_THE_MAN = 5000, SCORE_THE_CHAMBER = 750;
@@ -59,7 +59,7 @@ export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, 
   const pool = [];
   const die = (ending) => { const r = { ...run, ending }; hooks.gameOver && hooks.gameOver(r); return r; };
   for (let si = 0; si < STAGES.length; si++) {
-    bob.whoa_available = true;
+    stageStart(bob);
     hooks.stage && hooks.stage(si, STAGES[si]);
     for (let bi = 0; bi < DECISIONS_PER_STAGE; bi++) {
       run.surveillance += 1;
@@ -77,6 +77,7 @@ export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, 
       hooks.bonus && hooks.bonus(si, BONUS_BASE[si]);
       run.score += BONUS_BASE[si];
     }
+    stageEnd(eng, bob, si, hooks.present);
   }
   run.score += SCORE_REACH_TABLE;
   const ending = lastRites(eng, bob, run);
