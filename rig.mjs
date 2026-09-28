@@ -470,3 +470,14 @@ export const BOB_ART = String.raw`      _____
       /  \ `;
 export function bobFrame(eyes){ const e = (eyes && EYES[eyes] !== undefined ? EYES[eyes] : EYES.idle);
   return BOB_ART.replace("{L}", e[0]).replace("{R}", e[2]); }
+
+// ---------------------------------------------------------------- PAINTED SPRITES (0928: the first sheet)
+// A character with an entry here draws his painted frames instead of ASCII; everyone else stays ASCII
+// until his sheet arrives. Frames cut by tools/cut_duel_sheet.py; eyes = sockets measured per frame.
+export const SPRITES = {
+  "HUNTER 1": { base:"sprites/duel1/hunter1_", meta:"sprites/duel1/hunter1.json",
+    states:["idleA","idleB","twitch","draw","fire","winged_idle","winged_draw","hit_center","hit_head","down"] },
+};
+export const HAND_SPRITES = { base:"sprites/duel1/hand_", states:["idle","aim","recoil","recoil2","fan","feint","hurt"] };
+export const FX_SPRITES = { base:"sprites/duel1/fx_", names:["flash1","flash2","flash3","blood","dust","flashbulb"] };
+export const EYE_CLOSEUPS = { base:"sprites/duel1/eyes_", looks:["idle","HEAD","CENTER","WING","BOB","DEAD"] };

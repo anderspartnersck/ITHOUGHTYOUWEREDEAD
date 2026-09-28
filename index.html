@@ -233,6 +233,27 @@
   #hBob.hurt::after{ content:" CRITICAL"; color:var(--blood); animation:blink .5s steps(1) infinite; }
   /* the OPEN LOW warning after a feint nobody bought */
   .zone.open{ border:2px solid var(--blood); color:var(--blood); animation:blink .3s steps(1) infinite; }
+  /* PAINTED SPRITES (0928) — the man, Bob's hand, effects, and the Leone eye close-up */
+  /* one shared scale for every frame (a man lying down is short and wide), feet on a common baseline */
+  #man.sprite{ top:55%; height:33vh; max-height:330px; display:flex; align-items:flex-end; justify-content:center; }
+  #manImg{ display:none; margin:0 auto; image-rendering:auto;
+    filter:drop-shadow(0 0 14px rgba(0,0,0,.85)); }
+  #man.sprite #manImg{ display:block; } #man.sprite pre{ display:none; }
+  .eyeDot{ position:absolute; z-index:2; border-radius:50%; background:#efe3c6; box-shadow:0 0 0 1px #2a1d10 inset;
+    pointer-events:none; overflow:hidden; }
+  .eyeDot i{ position:absolute; width:46%; height:78%; left:27%; top:11%; border-radius:50%; background:#1a120a; transition:top .08s, left .08s; }
+  .eyeDot.HEAD i{ top:-12%; } .eyeDot.WING i{ top:36%; } .eyeDot.BOB i{ width:62%; height:92%; left:19%; top:4%; }
+  .eyeDot.DEAD{ background:#c9b99a; } .eyeDot.DEAD i{ display:none; }
+  #handImg{ position:absolute; left:67%; bottom:-2%; transform:translateX(-50%); height:26vh; max-height:260px; z-index:5;
+    display:none; pointer-events:none; filter:drop-shadow(0 -4px 12px rgba(0,0,0,.8)); }
+  #scene.painted #handImg{ display:block; } #scene.painted #hand{ display:none; }
+  .fxImg{ position:absolute; z-index:6; pointer-events:none; transform:translate(-50%,-50%); animation:fxpop .45s ease-out forwards; }
+  @keyframes fxpop{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6); } 25%{ opacity:1; transform:translate(-50%,-50%) scale(1.05); }
+    100%{ opacity:0; transform:translate(-50%,-50%) scale(1.15); } }
+  /* the Leone insert: an extreme close-up of HIS eyes while you read him (the painted pupils are too small at play size) */
+  #eyeInsert{ position:absolute; left:3%; top:20%; width:27%; z-index:6; display:none;
+    border-top:3px solid #000; border-bottom:3px solid #000; background:#0b0806; box-shadow:0 0 30px rgba(0,0,0,.9); }
+  #eyeInsert.on{ display:block; animation: rise .18s ease both; } #eyeInsert img{ display:block; width:100%; }
   /* painted cutscene stills (sprites/attract/) — a film frame inside the overlay; ASCII is the fallback */
   #overlay img.still{ max-width:94%; max-height:58vh; object-fit:contain; border:1px solid rgba(216,162,58,.25);
     box-shadow:0 0 40px rgba(0,0,0,.8); animation: rise .9s ease both; }
@@ -258,13 +279,15 @@
   <div id="hud"><div>BOB <b id="hBob" class="pips">▮▮</b></div><div>RECORD <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div><div>HIM <b id="hHim" class="pips">▮▮</b></div></div>
   <div id="poem">— · — · —</div>
 
-  <div id="man"><pre id="manArt"></pre>
+  <div id="man"><img id="manImg" alt=""><pre id="manArt"></pre><div class="eyeDot" id="eyeL"><i></i></div><div class="eyeDot" id="eyeR"><i></i></div>
     <div class="zone" id="zHEAD">HEAD ↑</div>
     <div class="zone" id="zCENTER">CENTER MASS</div>
     <div class="zone" id="zWING">WING ↓</div>
   </div>
   <div id="pres"></div>
   <div id="hand">════╝</div>
+  <img id="handImg" alt="">
+  <div id="eyeInsert"><img id="eyeInsertImg" alt=""></div>
   <div id="clock"></div>
   <div id="whiteout"></div>
   <div id="iris"></div>
@@ -289,7 +312,8 @@ import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STAN
   WINGED_SLOW, LEGEND_LOUD, CHAMBERS, bulletsFor, beatOpponent,
   PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST, QUICK_HAND_S, SELL_IT_SECOND,
   PERKS, PERK_PAIRS, stageStart } from "./engine.mjs";
-import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES, bobFrame } from "./rig.mjs";
+import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES, bobFrame,
+  SPRITES, HAND_SPRITES, FX_SPRITES, EYE_CLOSEUPS } from "./rig.mjs";
 import { tournament as _tourSim, BOUT_EXCHANGES, BOB_TELL_2P, GUNMAN_PERK_PAIRS, LINEUP, PAIR_SLOT, SEVEN_JOHN, SEVEN_JOHN_2,
   BANGKOK_SHOTS } from "./engine.mjs";
 import { SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE,
@@ -388,16 +412,92 @@ function figureArt(char, winged, eyes, state){
   const st = state || (winged ? "winged_idle" : "idleA");
   return frame(char, st, eyes);
 }
+// PAINTED SPRITES — preload every frame; load each rig's eye anchors (the sockets measured by the cutter).
+const SPRITE_META = {};
+for (const [name, sp] of Object.entries(SPRITES)){
+  sp.states.forEach(st => { const i = new Image(); i.src = sp.base + st + ".png"; });
+  fetch(sp.meta).then(r => r.json()).then(m => { SPRITE_META[name] = m; }).catch(() => {});
+}
+HAND_SPRITES.states.forEach(st => { const i = new Image(); i.src = HAND_SPRITES.base + st + ".png"; });
+FX_SPRITES.names.forEach(n => { const i = new Image(); i.src = FX_SPRITES.base + n + ".png"; });
+EYE_CLOSEUPS.looks.forEach(l => { const i = new Image(); i.src = EYE_CLOSEUPS.base + l + ".png"; });
+$("scene").classList.add("painted");                      // Bob's painted hand is on
+const spriteFor = c => (c && SPRITES[c.name]) || null;
+// the nearest painted frame for a rig state (idleB→idleA etc. if a sheet lacks one)
+function spriteState(sp, st){
+  if (sp.states.includes(st)) return st;
+  return { idleB:"idleA", twitch:"idleA", winged_draw:"winged_idle" }[st] || (st.startsWith("winged") ? "winged_idle" : "idleA");
+}
 function render(){
   if (POSE.pair) return;
+  const sp = spriteFor(POSE.char);
+  $("man").classList.toggle("sprite", !!sp);
+  if (sp){
+    const st = spriteState(sp, POSE.state);
+    const img = $("manImg"), src = sp.base + st + ".png";
+    const scaleTo = () => {                                        // ONE scale: the standing frame's height = the box
+      const ref = (SPRITE_META[POSE.char.name] && SPRITE_META[POSE.char.name].refH) || 310;
+      img.style.height = (img.naturalHeight / ref * $("man").getBoundingClientRect().height) + "px";
+    };
+    if (!img.src.endsWith(src)) { img.onload = () => { scaleTo(); placeEyes(sp, st); fitZones(); }; img.src = src; }
+    else { scaleTo(); placeEyes(sp, st); fitZones(); }
+    return;
+  }
+  hideEyes();
   $("manArt").textContent = figureArt(POSE.char, POSE.winged, POSE.eyes, POSE.state);
   fitZones();
+}
+// tiny eyes IN his sockets (anchors from the cutter) — the look follows POSE.eyes (the tell)
+function hideEyes(){ $("eyeL").style.display = $("eyeR").style.display = "none"; }
+function placeEyes(sp, st){
+  const meta = SPRITE_META[POSE.char.name], anchors = meta && meta.eyes && meta.eyes[st];
+  if (!anchors || anchors.length < 2 || st === "down"){ hideEyes(); return; }
+  const img = $("manImg"), ir = img.getBoundingClientRect(), mr = $("man").getBoundingClientRect();
+  const look = POSE.eyes || (st.startsWith("hit") ? "DEAD" : "idle");
+  [["eyeL", anchors[0]], ["eyeR", anchors[1]]].forEach(([id, [x, y, w, h]]) => {
+    const e = $(id); e.style.display = "block"; e.className = "eyeDot " + look;
+    e.style.left = (ir.left - mr.left + x*ir.width) + "px"; e.style.top = (ir.top - mr.top + y*ir.height) + "px";
+    e.style.width = Math.max(4, w*ir.width) + "px"; e.style.height = Math.max(3, h*ir.height) + "px";
+  });
+}
+// the Leone close-up of his eyes — on while you read him (and on the stare); null hides it
+function eyeInsert(look){
+  const box = $("eyeInsert");
+  if (!look || !spriteFor(POSE.char)){ box.classList.remove("on"); return; }
+  $("eyeInsertImg").src = EYE_CLOSEUPS.base + look + ".png"; box.classList.add("on");
+}
+// a painted effect over the man, at (fx, fy) fractions of his figure
+function fxAt(name, fx=0.5, fy=0.4, scale=1){
+  const mr = $("man").getBoundingClientRect(), sr = scn().getBoundingClientRect(), i = document.createElement("img");
+  i.className = "fxImg"; i.src = FX_SPRITES.base + name + ".png"; i.style.height = (sr.height*0.16*scale) + "px";
+  i.style.left = (mr.left - sr.left + fx*mr.width) + "px"; i.style.top = (mr.top - sr.top + fy*mr.height) + "px";
+  scn().appendChild(i); setTimeout(() => i.remove(), 600);
 }
 // FIT THE TARGETS TO THE BODY. Measure the drawn figure (monospace grid) and place the zones on it:
 // HEAD = the top ~40% of its rows, CENTER = the chest rows below, WING = the low rows. Horizontal extent
 // = the columns that actually have ink in those rows (so the head is genuinely the SMALL target).
 // Works for any rig height and for the pair; sprites can later supply their own boxes.
+const _fitCanvas = document.createElement("canvas");
+function fitZonesImg(){
+  const img = $("manImg"); if (!img.naturalWidth) return;
+  const W = img.naturalWidth, H = img.naturalHeight; _fitCanvas.width = W; _fitCanvas.height = H;
+  const cx = _fitCanvas.getContext("2d", { willReadFrequently:true }); cx.clearRect(0,0,W,H); cx.drawImage(img, 0, 0);
+  let data; try { data = cx.getImageData(0,0,W,H).data; } catch { return; }
+  const ir = img.getBoundingClientRect(), mr = $("man").getBoundingClientRect(), sx = ir.width/W, sy = ir.height/H;
+  // bands: the head = top ~19% of a standing figure, the chest to ~52%, the wing = the low body
+  const bands = { HEAD:[0, Math.round(H*0.19)], CENTER:[Math.round(H*0.19), Math.round(H*0.52)], WING:[Math.round(H*0.52), H] };
+  for (const [lane,[a,b]] of Object.entries(bands)){
+    let lo = W, hi = -1;
+    for (let y=a; y<b; y+=2) for (let x=0; x<W; x++) if (data[(y*W + x)*4 + 3] > 120){ if (x < lo) lo = x; if (x > hi) hi = x; }
+    if (hi < 0){ lo = 0; hi = W-1; }
+    if (lane === "HEAD"){ const mid = (lo+hi)/2, half = Math.min((hi-lo)/2, W*0.16); lo = mid-half; hi = mid+half; }  // the head, not the gun arm
+    const z = $("z"+lane);
+    z.style.left = (ir.left - mr.left + lo*sx) + "px"; z.style.width = ((hi-lo+1)*sx) + "px";
+    z.style.top = (ir.top - mr.top + a*sy) + "px"; z.style.height = ((b-a)*sy) + "px"; z.style.transform = "none";
+  }
+}
 function fitZones(){
+  if ($("man").classList.contains("sprite")) return fitZonesImg();
   const pre = $("manArt"), man = $("man"); const txt = pre.textContent; if (!txt) return;
   const lines = txt.split("\n"); const n = lines.length; if (n < 3) return;
   const pr = pre.getBoundingClientRect(), mr = man.getBoundingClientRect();
@@ -415,7 +515,7 @@ function fitZones(){
     z.style.transform = "none";
   }
 }
-window.addEventListener("resize", () => fitZones());
+window.addEventListener("resize", () => { fitZones(); if (POSE.char && spriteFor(POSE.char) && !POSE.pair) render(); });
 const drawMan = (char, winged, eyes=null, state=null) => {
   $("man").classList.remove("down","pair");
   Object.assign(POSE, { char, winged, eyes, state: state || (winged ? "winged_idle" : "idleA"), pair:null });
@@ -466,11 +566,14 @@ function setLife(bob, opp){
     e.innerHTML = Array.isArray(opp) ? opp.map(pips).join(" ") : pips(opp); e.classList.toggle("hurt", !Array.isArray(opp) && !!(opp && opp.winged)); }
 }
 // Bob's gun-hand, first person (rig states: idle / aim / recoil / fan / hurt / feint)
-function hand(state){ const h = $("hand"); h.textContent = HANDS[state] || HANDS.idle; }
+function hand(state){ const h = $("hand"); h.textContent = HANDS[state] || HANDS.idle;
+  const st = HAND_SPRITES.states.includes(state) ? state : "idle"; $("handImg").src = HAND_SPRITES.base + st + ".png"; }
 // the gun-barrel iris
 function iris(mode){ const i = $("iris"); i.classList.remove("tight","open"); if (mode) i.classList.add(mode); }
 const fmt = t => (t===Infinity ? "FALSE START" : t >= 9 ? "—" : t.toFixed(2)+"s");
-const dropFoe = () => { POSE.breathing = false; $("manArt").textContent = FOE_DOWN; fitZones(); $("man").classList.remove("winged"); $("man").classList.add("down");
+const dropFoe = () => { POSE.breathing = false;
+  if (spriteFor(POSE.char) && !POSE.pair){ POSE.state = "down"; render(); eyeInsert(null); }
+  else { $("manArt").textContent = FOE_DOWN; fitZones(); } $("man").classList.remove("winged"); $("man").classList.add("down");
   flare(); sting('kill'); sfx.roar(); };   // the killshot hard-cuts to the painted kill + crowd roar — "DID YOU SEE THAT?"
 // the WINGED beat — a wound, NOT a kill: a blood-red flash + recoil stagger on the foe figure.
 // Deliberately small (no painted hard-cut, no crowd roar) so it reads as "he's hit, still up."
@@ -479,9 +582,9 @@ function woundFX(){ const m = $("man"); m.classList.remove("wound"); void m.offs
 // muzzle flash off your gun-hand on a connecting shot, with a short stage shake
 async function muzzleFX(){
   const h = $("hand"); $("man").classList.add("shake");
-  h.textContent = HANDS.recoil; h.classList.add("fire"); await sleep(80);
-  h.textContent = HANDS.recoil2; await sleep(80);
-  h.textContent = HANDS.aim; h.classList.remove("fire"); $("man").classList.remove("shake");
+  h.textContent = HANDS.recoil; h.classList.add("fire"); hand("recoil"); await sleep(90);
+  h.textContent = HANDS.recoil2; hand("recoil2"); await sleep(110);
+  h.textContent = HANDS.aim; hand("aim"); h.classList.remove("fire"); $("man").classList.remove("shake");
 }
 const setHUD = r => { $("hRec").textContent = r.surveillance; $("hLeg").textContent = r.legend; $("hScore").textContent = r.score.toLocaleString(); };
 const setPoem = n => { $("poem").textContent = Array.from({length:SONNET_LENGTH}, (_,i)=> i<n?"●":"·").join("") + `  ${n}/${SONNET_LENGTH}`; };
@@ -707,8 +810,8 @@ async function drawShoot(feint, opts={}){
 // the false start, dramatized: CRACK into the dirt. He freezes, looks at Bob. Then draws.
 async function falseStart(char, winged){
   sfx.shot(); banner("CRACK —", "you fired early. into the dirt.", true); iris("open");
-  await sleep(TIMING.falseStartCrack); drawMan(char, winged, "BOB"); $("man").classList.add("stare"); clock(`<span class="late">FALSE START</span>`);
-  await sleep(TIMING.falseStartStare); $("man").classList.remove("stare");
+  await sleep(TIMING.falseStartCrack); drawMan(char, winged, "BOB"); $("man").classList.add("stare"); eyeInsert("BOB"); clock(`<span class="late">FALSE START</span>`);
+  await sleep(TIMING.falseStartStare); $("man").classList.remove("stare"); eyeInsert(null);
 }
 // WHOA! window — you won the draw; time nearly stops and the button lights for ~600ms.
 // Press it (E / Q / right-click / cab button) to fan the hammer. Do nothing: Bob finishes the clean shot.
@@ -818,7 +921,7 @@ async function exchange(eng, bob, opp, run, opts={}){
         return { dead: opts.alt, out: KILL };
       }
       const lane = shot.lane, clean = shot.center >= DEAD_EYE_TH;
-      if (!lane){ await freeze(null, null, true); sfx.shot(); sfx.block();       // pulled it WIDE — the sway won
+      if (!lane){ await freeze(null, null, true); sfx.shot(); sfx.block(); fxAt("dust", 0.5, 0.95);   // pulled it WIDE — the sway won
         banner("WIDE", "you pulled it. he's still out there.", true); if (run) run.deadeye = 0; await sleep(500);
         return { dead:null, out:GRAZE }; }
       const read = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane);
@@ -852,9 +955,10 @@ async function exchange(eng, bob, opp, run, opts={}){
   const tell = eng._tell(opp, lane, bob);
   drawMan(opp.char, opp.winged, tell === null ? "BLIND" : tell, opp.winged ? "winged_draw" : "draw"); POSE.breathing = false;
   const cue = shoulderCue(lane, tell, readMs);
+  eyeInsert(tell === null ? null : tell);                          // the Leone close-up: read HIS eyes
   const read = await askLane(tell === null ? `<span class="lethal">READ HIM</span> — you can't see his eyes`
                                           : `READ ${PR(opp.char).HIM} — ${PR(opp.char).his} eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: readMs });
-  cue();
+  cue(); eyeInsert(null);
   bob.reads.push(read); opp.attacks.push(lane);
   pose("fire"); sfx.shot(); await sleep(TIMING.firePose);                 // his muzzle flash
   const out = eng._resolve(opp, lane, read, bob);
@@ -875,7 +979,7 @@ async function land(reader, out, attacker, lane, read, second=false){
   if (out===KILL || (out===WINGED && reader.winged)){
     const finished = out===WINGED;
     reader.alive=false; sfx.shot();
-    if(!you && !POSE.pair){ pose(lane===HEAD ? "hit_head" : "hit_center", "DEAD"); await sleep(TIMING.hitPose); dropFoe(); }
+    if(!you && !POSE.pair){ pose(lane===HEAD ? "hit_head" : "hit_center", "DEAD"); fxAt("blood", 0.5, lane===HEAD ? 0.12 : 0.35); await sleep(TIMING.hitPose); dropFoe(); }
     else if (!you) { flare(); sfx.roar(); }
     banner(you ? (finished ? "FINISHED — you're gone" : "YOU'RE DEAD") : (finished ? "FINISHED" : "KILL"), finished ? "winged again" : verb, true);
     setLife(bob, POSE.pair || foe); return {dead:reader, out:KILL};
@@ -883,7 +987,7 @@ async function land(reader, out, attacker, lane, read, second=false){
   if (out===WINGED){
     sfx.shot();
     reader.winged=true; sfx.wound();
-    if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
+    if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); fxAt("blood", 0.62, 0.62, 0.7); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
     banner(you?"CRITICAL":"WINGED", you?"you're hit. one more and you're done — your hand won't settle":`${PR(reader.char).he}'ll be back — crippled`);
     setLife(bob, POSE.pair || foe); return {dead:null, out};
   }
@@ -1046,7 +1150,7 @@ async function heyBobSmile(eng, bob, run){
   const shooter = new Side(PHOTOGRAPHER, new AIController());
   drawMan(shooter.char, false, null, "idleA");       // a camera where his face should be — no stage card, no warning
   banner("HEY BOB —", "", true); await sleep(750);
-  pose("flash"); banner("SMILE!", "", true); sfx.flash();
+  pose("flash"); banner("SMILE!", "", true); sfx.flash(); fxAt("flashbulb", 0.5, 0.12, 2.2);
   const w = $("whiteout"); w.classList.remove("pop"); void w.offsetWidth; w.classList.add("pop");
   bob.lethal_wing = run.legend >= LEGEND_LOUD;
   $("man").classList.add("burn");
@@ -1507,7 +1611,7 @@ async function twoPlayer(bangkok){
 }
 window.__two = { twoPlayer };
 // dev/QA hook: put the screen in any state for a screenshot (tools/_shots.mjs). Presentation only.
-window.__pose = { drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
+window.__pose = { eyeInsert, fxAt, drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
   clock, overlay, hideOverlay, showGuard, zone:(l,c)=>$("z"+l).classList.add(c), clearZones, cylinder, SEATS,
   chars:{ BOB, MARSHAL, BATTER, PHOTOGRAPHER, PRESIDENTS_MAN, SEVEN_JOHN, SEVEN_JOHN_2, LINEUP }, Side, HumanCtl };
 
