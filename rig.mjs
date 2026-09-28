@@ -29,8 +29,9 @@ export const TIMING = {
 };
 
 // ---------------------------------------------------------------- EYES (the overlay)
-// ˙ ˙ = looking HIGH (your head) · • • = level (center) · . . = LOW (the wing) · ◉ ◉ = straight at Bob.
-export const EYES = { idle:"o o", HEAD:"˙ ˙", CENTER:"• •", WING:". .", BOB:"◉ ◉", BLIND:"   ", DEAD:"x x", SHUT:"- -" };
+// ^ ^ = looking HIGH (your head) · • • = level (center) · v v = LOW (the wing) · ◉ ◉ = straight at Bob.
+// (0928 QA: the first glyphs ˙ ˙ / . . were nearly invisible at play size — the eyes ARE the read.)
+export const EYES = { idle:"o o", HEAD:"^ ^", CENTER:"• •", WING:"v v", BOB:"◉ ◉", BLIND:"   ", DEAD:"x x", SHUT:"- -" };
 export const EYE_WORD = { HEAD:"↑ high", CENTER:"→ level", WING:"↓ low" };
 
 // ---------------------------------------------------------------- HATS (the per-hunter read at a glance)
@@ -460,8 +461,8 @@ export const SCENES = {
 // BOB — seen from across the street (the 2P view: the gunman's player looks AT Bob). Glasses; eyes overlay.
 export const BOB_ART = String.raw`      _____
      |     |
-    [{L}]-[{R}]      CLEVELAND BOB
-     |  - |       Anders & Partners
+    [{L}]-[{R}]
+     |  - |
       \__/
      /|▓▓|\__(◎)
       |▓▓|

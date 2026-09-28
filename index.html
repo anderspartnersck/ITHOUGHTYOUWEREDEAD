@@ -34,6 +34,9 @@
   /* TARGET SIZES (0928): the head is SMALL (the gamble), center mass BIG (the sure thing), the wing between.
      A shot outside every zone is WIDE — a miss. */
   #zHEAD{ top:4%; height:16%; width:30%; } #zCENTER{ top:23%; height:40%; width:60%; } #zWING{ top:65%; height:27%; width:74%; }
+  /* zones are FITTED to the drawn figure (fitZones); labels only show when the zone is live */
+  .zone{ color:transparent; } .zone.aim, .zone.sel, .zone.read, .zone.guard, .zone.shoulder, .zone.open{ color:inherit; }
+  .zone.aim{ color:#caa15e; } .zone.sel{ color:var(--gold); } .zone.read{ color:#e88; } .zone.guard{ color:#c77; }
   /* the SHOULDER: late, but it never lies — his gun arm swings to where he'll really shoot */
   .zone.shoulder{ border-left:5px solid #f0d49a; box-shadow:-10px 0 18px -6px rgba(240,212,154,.55); color:#f0d49a; }
   .zone.sel{ border-color:var(--gold); color:var(--gold); box-shadow:0 0 18px rgba(216,162,58,.35) inset; }
@@ -44,10 +47,10 @@
     font-family:ui-monospace,monospace; color:#3a3d46; font-size:clamp(12px,2.4vh,22px); }
 
   /* HUD */
-  #hud{ position:absolute; top:2.5%; left:3%; right:3%; display:flex; justify-content:space-between;
+  #hud{ position:absolute; top:2.5%; left:3%; right:3%; z-index:6; display:flex; justify-content:space-between;
     font-size:clamp(10px,1.7vh,15px); color:var(--dim); text-transform:uppercase; }
   #hud b{ color:var(--bone); font-weight:700; }
-  #poem{ position:absolute; top:2.5%; left:50%; transform:translateX(-50%); color:var(--gold);
+  #poem{ position:absolute; top:7%; left:50%; z-index:6; transform:translateX(-50%); color:var(--gold);
     font-size:clamp(10px,1.7vh,15px); letter-spacing:2px; }
 
   /* big centered prompt / banners */
@@ -59,7 +62,8 @@
   @keyframes flash{ 0%{ filter:brightness(3); } 100%{ filter:none; } }
 
   /* bottom prompt bar */
-  #prompt{ position:absolute; left:0; right:0; bottom:5%; text-align:center;
+  #prompt{ position:absolute; left:50%; transform:translateX(-50%); bottom:5%; text-align:center; z-index:6;
+    background:rgba(3,4,7,.72); border-radius:6px; padding:.15em .8em; white-space:nowrap; max-width:96%;
     font-size:clamp(12px,2.3vh,20px); color:var(--bone); min-height:2em; }
   #prompt .k{ display:inline-block; border:1px solid var(--dim); border-radius:4px; padding:0 .4em;
     margin:0 .15em; color:var(--gold); font-size:.85em; }
@@ -192,7 +196,7 @@
   #pres.on{ display:block; } #pres.aim{ color:#e7c98a; text-shadow:0 0 16px rgba(216,162,58,.5); }
   #pres.down{ color:var(--blood); transform:translate(-50%,-44%) rotate(4deg); opacity:.8; }
   /* the draw clock — quick-draw sport shows the times */
-  #clock{ position:absolute; left:0; right:0; top:26%; text-align:center; font-family:ui-monospace,Menlo,monospace;
+  #clock{ position:absolute; left:0; right:0; bottom:13%; text-align:center; font-family:ui-monospace,Menlo,monospace;
     font-size:clamp(11px,2vh,17px); color:#b9bcc6; letter-spacing:1px; pointer-events:none; min-height:1.3em; }
   #clock b{ color:var(--gold); } #clock .late{ color:var(--blood); }
   /* WHOA! — time nearly stops; the button lights */
@@ -384,7 +388,31 @@ function figureArt(char, winged, eyes, state){
 function render(){
   if (POSE.pair) return;
   $("manArt").textContent = figureArt(POSE.char, POSE.winged, POSE.eyes, POSE.state);
+  fitZones();
 }
+// FIT THE TARGETS TO THE BODY. Measure the drawn figure (monospace grid) and place the zones on it:
+// HEAD = the top ~40% of its rows, CENTER = the chest rows below, WING = the low rows. Horizontal extent
+// = the columns that actually have ink in those rows (so the head is genuinely the SMALL target).
+// Works for any rig height and for the pair; sprites can later supply their own boxes.
+function fitZones(){
+  const pre = $("manArt"), man = $("man"); const txt = pre.textContent; if (!txt) return;
+  const lines = txt.split("\n"); const n = lines.length; if (n < 3) return;
+  const pr = pre.getBoundingClientRect(), mr = man.getBoundingClientRect();
+  const maxLen = Math.max(...lines.map(l => [...l].length)) || 1;
+  const cw = pr.width / maxLen, lh = pr.height / n;
+  const hEnd = Math.max(1, Math.round(n*0.42)), cEnd = Math.max(hEnd+1, Math.round(n*0.72));
+  const bands = { HEAD:[0,hEnd], CENTER:[hEnd,cEnd], WING:[cEnd,n] };
+  for (const [lane,[a,b]] of Object.entries(bands)){
+    let lo = 1e9, hi = -1;
+    for (let i=a;i<b;i++){ const L = [...(lines[i]||"")]; L.forEach((ch,c) => { if (ch !== " ") { lo = Math.min(lo,c); hi = Math.max(hi,c); } }); }
+    if (hi < 0){ lo = 0; hi = maxLen-1; }
+    const z = $("z"+lane);
+    z.style.left = (pr.left - mr.left + lo*cw - 4) + "px"; z.style.width = ((hi-lo+1)*cw + 8) + "px";
+    z.style.top = (pr.top - mr.top + a*lh - 2) + "px"; z.style.height = ((b-a)*lh + 4) + "px";
+    z.style.transform = "none";
+  }
+}
+window.addEventListener("resize", () => fitZones());
 const drawMan = (char, winged, eyes=null, state=null) => {
   $("man").classList.remove("down","pair");
   Object.assign(POSE, { char, winged, eyes, state: state || (winged ? "winged_idle" : "idleA"), pair:null });
@@ -410,6 +438,7 @@ function drawPair(j1, j2, e1=null, e2=null, s1=null, s2=null){
   POSE.pair = [j1, j2];
   $("man").classList.remove("down","winged","boss"); $("man").classList.add("pair");
   $("manArt").textContent = lines.join("\n");
+  fitZones();
 }
 const PRES_ART = PRESIDENT_ART.idle.replace("{E}", "o o");
 function showPres(on, dead=false){ const p=$("pres"); p.textContent = dead ? PRESIDENT_ART.down : PRES_ART; p.classList.toggle("on", on); p.classList.toggle("down", dead); }
@@ -438,7 +467,7 @@ function hand(state){ const h = $("hand"); h.textContent = HANDS[state] || HANDS
 // the gun-barrel iris
 function iris(mode){ const i = $("iris"); i.classList.remove("tight","open"); if (mode) i.classList.add(mode); }
 const fmt = t => (t===Infinity ? "FALSE START" : t >= 9 ? "—" : t.toFixed(2)+"s");
-const dropFoe = () => { POSE.breathing = false; $("manArt").textContent = FOE_DOWN; $("man").classList.remove("winged"); $("man").classList.add("down");
+const dropFoe = () => { POSE.breathing = false; $("manArt").textContent = FOE_DOWN; fitZones(); $("man").classList.remove("winged"); $("man").classList.add("down");
   flare(); sting('kill'); sfx.roar(); };   // the killshot hard-cuts to the painted kill + crowd roar — "DID YOU SEE THAT?"
 // the WINGED beat — a wound, NOT a kill: a blood-red flash + recoil stagger on the foe figure.
 // Deliberately small (no painted hard-cut, no crowd roar) so it reads as "he's hit, still up."
@@ -1459,23 +1488,28 @@ async function twoRound(bangkok, bobSeat){
   return beaten;
 }
 async function twoPlayer(bangkok){
+  window.__twoMode = true;
   const scores = [0, 0];
   for (const bobSeat of [0, 1]){
     scores[bobSeat] = await twoRound(bangkok, bobSeat);
     await playScene("died", { name: `${SEATS[bobSeat].name} as Bob beat ${scores[bobSeat]} of 12` });
   }
-  p2show(false); critical(false);
+  p2show(false); critical(false); window.__twoMode = false;
   const w = scores[0] === scores[1] ? "A DRAW — nobody walks" : `${scores[0] > scores[1] ? "P1" : "P2"} TAKES IT`;
   overlay(`<h1>THE TOURNAMENT</h1><p>P1 as Bob: <b>${scores[0]}</b> gunmen &nbsp;·&nbsp; P2 as Bob: <b>${scores[1]}</b> gunmen</p>
     <h1 class="gold">${w}</h1><div class="start">press any key</div>`);
   await nextKey(() => true); boot();
 }
 window.__two = { twoPlayer };
+// dev/QA hook: put the screen in any state for a screenshot (tools/_shots.mjs). Presentation only.
+window.__pose = { drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
+  clock, overlay, hideOverlay, showGuard, zone:(l,c)=>$("z"+l).classList.add(c), clearZones, cylinder, SEATS,
+  chars:{ BOB, MARSHAL, BATTER, PHOTOGRAPHER, PRESIDENTS_MAN, SEVEN_JOHN, SEVEN_JOHN_2, LINEUP }, Side, HumanCtl };
 
 async function howTo() {
   overlay(`<h1>HOW TO PLAY</h1>
     <p><b>Watch the man.</b> His <b>body</b> says <i>when</i> — don't bite on the twitch: fire during <i>steady…</i> and it's a false start.
-    His <b>eyes</b> say <i>where</i> — mostly. <span class="k">˙ ˙</span> high · <span class="k">• •</span> level · <span class="k">. .</span> low.</p>
+    His <b>eyes</b> say <i>where</i> — mostly. <span class="k">^ ^</span> high · <span class="k">• •</span> level · <span class="k">v v</span> low.</p>
     <p>On <span class="big gold">DRAW!</span> the crosshair's on his chest — correct and <span class="k">FIRE</span>.
     <span class="k">HEAD</span> = the headshot, the legend. <span class="k">CENTER</span> = the honest kill. <span class="k">WING</span> = a wound — he'll be back.</p>
     <p>His dashed guard drifts to <i>your</i> habit. Break pattern. If he's first: his <b>eyes</b> come early and can lie —
@@ -1504,12 +1538,33 @@ async function startGame() {
 // Stick/d-pad/hat VERTICAL -> lane select (UP=HEAD, DOWN=WING, neutral=CENTER) by synthesizing the
 // SAME window keydowns the keyboard lanes use (reuses KEYLANE + every kd/nextKey listener).
 // Button 0 = FIRE -> synthetic Space (fires the hover AND advances "press any key" beats / coin drop).
+const PAD_SEAT = [
+  { up:"KeyW", down:"KeyX", center:"KeyS", draw:"ShiftLeft", feint:"KeyQ" },
+  { up:"KeyI", down:"KeyM", center:"KeyK", draw:"Enter", feint:"KeyU" },
+];
+const padSt = [];
+const keyCode = code => { try{ window.dispatchEvent(new KeyboardEvent("keydown", { code, key:code, bubbles:true })); }catch(e){} };
 function startGamepad(){
+  if (startGamepad._on) return; startGamepad._on = true;       // boot() runs every replay — one poll loop, not one per game
   let lastDir = 0, lastFire = false;                                   // edge-detect so we don't spam every frame
   const key = k => { try{ window.dispatchEvent(new KeyboardEvent("keydown", { key:k, code:(k===" "?"Space":k), bubbles:true })); }catch(e){} };
   function poll(){
     try {
       const pads = (navigator.getGamepads ? navigator.getGamepads() : []) || [];
+      // 2 PLAYERS: pad 1 = P1's seat, pad 2 = P2's seat (up/down aim, btn3 center, btn0 draw, btn2 feint)
+      if (window.__twoMode){
+        const live = [...pads].filter(Boolean);
+        live.slice(0, 2).forEach((gp, i) => {
+          const K = PAD_SEAT[i], G = window.Ghost ? Ghost.read(gp) : { ay:0 }, st = (padSt[i] ||= {});
+          const dir = G.ay <= -0.5 ? -1 : G.ay >= 0.5 ? 1 : 0;
+          if (dir !== st.dir){ if (dir === -1) keyCode(K.up); else if (dir === 1) keyCode(K.down); st.dir = dir; }
+          for (const [b, code] of [[0, K.draw], [3, K.center], [2, K.feint]]){
+            const on = !!(window.Ghost ? Ghost.btn(gp, b) : false);
+            if (on && !st["b"+b]) keyCode(code); st["b"+b] = on;
+          }
+        });
+        requestAnimationFrame(poll); return;
+      }
       let gp = null; for (const p of pads){ if (p){ gp = p; break; } }
       if (gp){
         const DZ = 0.5;
