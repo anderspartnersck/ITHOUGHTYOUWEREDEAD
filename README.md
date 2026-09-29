@@ -46,7 +46,7 @@ and whoever's Bob gets further wins. Both players' picks are hidden keypresses, 
 Bob's seat: Left-Shift draws, W S X aim or guard, Q feints (or gamepad 1). The gunman's seat: Right-Shift or Enter draws,
 I K M aim or guard, U feints (or gamepad 2).
 
-Kill removes a man. Wing changes him. Block postpones him — he'll walk back in: *I thought you were dead!*
+Kill removes a man. A gut shot changes him — and costs you DISHONOR: the crowd stops throwing coins, and at 3 your family is gone at the end (THE MAN, ALONE). Block postpones him — he'll walk back in: *I thought you were dead!*
 Four stages of three duels, the President, and the roulette. Every screen is ASCII for now; the paintings
 map over it later.
 

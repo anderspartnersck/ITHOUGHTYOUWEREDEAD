@@ -27,7 +27,7 @@ export function resolveWhoa(aSt, aLane, rSt, rLane) {
 }
 
 // weapon labels (POV words); GUN/BAT change only the words
-export const GUN = { name: "REVOLVER", lanes: { HEAD: "the dome piece", CENTER: "center mass", WING: "the wing" } };
+export const GUN = { name: "REVOLVER", lanes: { HEAD: "the dome piece", CENTER: "center mass", WING: "the gut" } };   // (0929) the low lane = THE GUT
 export const BAT = { name: "BARBED BAT", lanes: { HEAD: "the skull", CENTER: "the ribs", WING: "the arm" } };
 export const label = (w, lane) => w.lanes[lane] || lane;
 
@@ -110,7 +110,7 @@ export class SkilledController extends AIController {   // the skill ceiling (ma
 }
 
 export class Side {
-  constructor(char, ctrl) { this.char = char; this.ctrl = ctrl; this.alive = true; this.winged = false; this.whoa_available = true; this.lethal_wing = false; this.exposed = false; this.perks = new Set(); this.flesh = 0; this.whoa_spare = 0; this.attacks = []; this.reads = []; }
+  constructor(char, ctrl) { this.char = char; this.ctrl = ctrl; this.alive = true; this.winged = false; this.whoa_available = true; this.lethal_wing = false; this.exposed = false; this.perks = new Set(); this.flesh = 0; this.whoa_spare = 0; this.gut_shots = 0; this.attacks = []; this.reads = []; }
 }
 
 // ---- ENGINE ----
@@ -122,6 +122,10 @@ export class Engine {
     const out = resolveStrike(lane, read);
     if (out === WINGED && (attacker.char.wing_kills || attacker.lethal_wing || (reader !== null && reader.exposed))) return KILL;
     return out;
+  }
+  // a gut shot that LANDS is dishonor — Bob's only (mirror of engine.py _gut; no rng)
+  _gut(attacker, lane, out) {
+    if (attacker.char.showboat && lane === WING && (out === KILL || out === WINGED)) { attacker.gut_shots++; this.present("gut_shot", { attacker }); }
   }
   _land(reader, out) {
     if (out === KILL) { reader.alive = false; return true; }
@@ -191,6 +195,7 @@ export class Engine {
       const read = reader.ctrl.defend_read(reader.char, attacker.attacks, this.rng, tell);
       attacker.attacks.push(lane); reader.reads.push(read);
       const out = this._resolve(attacker, lane, read, reader);
+      this._gut(attacker, lane, out);
       this.present("strike", { attacker, reader, lane, read, out });
       return this._land(reader, out) ? reader : null;
     }
@@ -200,6 +205,7 @@ export class Engine {
     const [aSt, aLane] = attacker.ctrl.whoa(attacker.char, this.rng);
     const [rSt, rLane] = reader.ctrl.whoa_read(reader.char, this.rng);
     const out = resolveWhoa(aSt, aLane, rSt, rLane);
+    this._gut(attacker, aLane, out);
     this.present("whoa", { attacker, reader, stance: aSt, lane: aLane, out });
     if (out === KILL) { reader.alive = false; return reader; }
     if (out === MISFIRE) return null;
@@ -207,6 +213,7 @@ export class Engine {
     const lane = attacker.ctrl.attack_lane(attacker.char, reader.reads, this.rng);
     const read = reader.ctrl.defend_read(reader.char, attacker.attacks, this.rng, this._tell(attacker, lane, reader));
     const out2 = this._resolve(attacker, lane, read, reader);
+    this._gut(attacker, lane, out2);
     this.present("second", { attacker, reader, lane, read, out: out2, signature: attacker.char.winged_second });
     return this._land(reader, out2) ? reader : null;
   }
@@ -229,6 +236,7 @@ export class Engine {
             const read = j.ctrl.defend_read(j.char, bob.attacks, this.rng, this._tell(bob, lane, j));
             bob.attacks.push(lane); j.reads.push(read);
             const out = this._resolve(bob, lane, read);
+            this._gut(bob, lane, out);
             this.present("strike", { attacker: bob, reader: j, lane, read, out });
             this._land(j, out);
           }

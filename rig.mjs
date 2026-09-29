@@ -454,6 +454,10 @@ export const SCENES = {
     { art:A.crowd, h:"— click.", text:"empty. both times.", ms:1600 },
     { img:"sprites/attract/redo_1_kitchen.png", art:A.kitchen, h:"THE MAN", text:"she pulls him from the chamber. back to frame one — the kitchen.", ms:3400, cls:"warm" },
   ],
+  the_man_alone: [
+    { h:"— click.", text:"empty. both times.", ms:1600 },
+    { img:"sprites/attract/cold_open_8_empty.png", art:A.kitchen_grey, h:"THE MAN, ALONE", text:"he walks out of the chamber. she saw the gut shots. nobody is waiting.", ms:3600 },
+  ],
   the_chamber: [
     { h:"BANG.", ms:1200, cls:"lethal" },
     { img:"sprites/attract/cold_open_8_empty.png", art:A.kitchen_grey, h:"THE CHAMBER", text:"the crowd got its count. the man is gone.", ms:3400 },

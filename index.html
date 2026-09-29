@@ -276,13 +276,13 @@
 <div id="cab"><div id="scene">
   <div id="world"><div class="bg"></div><div class="grade"></div></div>
   <div id="crowd"></div>
-  <div id="hud"><div>BOB <b id="hBob" class="pips">▮▮</b></div><div>RECORD <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div><div>HIM <b id="hHim" class="pips">▮▮</b></div></div>
+  <div id="hud"><div>BOB <b id="hBob" class="pips">▮▮</b></div><div>DISHONOR <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div><div>HIM <b id="hHim" class="pips">▮▮</b></div></div>
   <div id="poem">— · — · —</div>
 
   <div id="man"><img id="manImg" alt=""><pre id="manArt"></pre><div class="eyeDot" id="eyeL"><i></i></div><div class="eyeDot" id="eyeR"><i></i></div>
     <div class="zone" id="zHEAD">HEAD ↑</div>
     <div class="zone" id="zCENTER">CENTER MASS</div>
-    <div class="zone" id="zWING">WING ↓</div>
+    <div class="zone" id="zWING">GUT ↓</div>
   </div>
   <div id="pres"></div>
   <div id="hand">════╝</div>
@@ -317,7 +317,7 @@ import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, 
 import { tournament as _tourSim, BOUT_EXCHANGES, BOB_TELL_2P, GUNMAN_PERK_PAIRS, LINEUP, PAIR_SLOT, SEVEN_JOHN, SEVEN_JOHN_2,
   BANGKOK_SHOTS } from "./engine.mjs";
 import { SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE,
-  SCORE_PRESIDENT, beatScore } from "./game.mjs";
+  SCORE_PRESIDENT, beatScore, DISHONOR_SHAMED, SCORE_THE_MAN_ALONE } from "./game.mjs";
 
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -586,7 +586,7 @@ async function muzzleFX(){
   h.textContent = HANDS.recoil2; hand("recoil2"); await sleep(110);
   h.textContent = HANDS.aim; hand("aim"); h.classList.remove("fire"); $("man").classList.remove("shake");
 }
-const setHUD = r => { $("hRec").textContent = r.surveillance; $("hLeg").textContent = r.legend; $("hScore").textContent = r.score.toLocaleString(); };
+const setHUD = r => { $("hRec").textContent = r.dishonor || 0; $("hRec").classList.toggle("lethal", (r.dishonor||0) >= DISHONOR_SHAMED); $("hLeg").textContent = r.legend; $("hScore").textContent = r.score.toLocaleString(); };
 const setPoem = n => { $("poem").textContent = Array.from({length:SONNET_LENGTH}, (_,i)=> i<n?"●":"·").join("") + `  ${n}/${SONNET_LENGTH}`; };
 const banner = (big, sub="", flash=false) => { $("big").textContent = big; $("sub").textContent = sub; if(flash){ $("big").classList.remove("flash"); void $("big").offsetWidth; $("big").classList.add("flash"); } };
 const prompt = html => $("prompt").innerHTML = html;
@@ -853,6 +853,13 @@ function deadEye(run, clean){
   b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
   flare(); if (clean) sfx.deye();
 }
+// THE GUT (0929): the low lane. A gut shot Bob LANDS is +1 DISHONOR — the crowd turns away; his family sees it.
+function gutShot(bob, run, lane, out){
+  if (lane !== WING || !(out === KILL || out === WINGED)) return;
+  bob.gut_shots++; if (run){ run.dishonor = bob.gut_shots; setHUD(run); }
+  $("crowd").classList.remove("flare");
+  setTimeout(() => banner("GUT SHOT", `dishonor ${bob.gut_shots} — the crowd turns away`, true), 700);
+}
 // THE SHOULDER — eyes come early and can lie; the torso commits late and never does. ~55% into your read
 // window his gun arm swings to the lane he'll REALLY shoot. Trust the eyes and guard early, or wait for the
 // shoulder and risk the window closing. (No shoulder in the flash — you can't see anything.) Returns a canceller.
@@ -927,6 +934,7 @@ async function exchange(eng, bob, opp, run, opts={}){
       const read = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane);
       bob.attacks.push(lane); opp.reads.push(read);
       const out = eng._resolve(bob, lane, read, opp);
+      gutShot(bob, run, lane, out);
       await freeze(lane, read, true);
       if (out !== GRAZE) await muzzleFX();
       if (run){ if (out===KILL && lane===HEAD) deadEye(run, clean); else run.deadeye = 0; }
@@ -937,6 +945,7 @@ async function exchange(eng, bob, opp, run, opts={}){
     const fan = await fanTheHammer();
     const [rSt, rLane] = opp.ctrl.whoa_read(opp.char, eng.rng);
     const out = resolveWhoa(fan.stance, fan.lane, rSt, rLane);
+    gutShot(bob, run, fan.lane, out);
     banner("WHOA!", out===KILL ? "DID YOU SEE THAT?!" : out===MISFIRE ? "the hammer jams — he read it all" : "half — he staggers into your second shot", true); await sleep(600);
     if (out===KILL){ opp.alive=false; sfx.shot(); dropFoe();
       if (run){ if (fan.lane===HEAD && fan.clean) deadEye(run, true); else run.deadeye = 0; }
@@ -947,6 +956,7 @@ async function exchange(eng, bob, opp, run, opts={}){
     const read2 = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane2);
     bob.attacks.push(lane2); opp.reads.push(read2);
     const o2 = eng._resolve(bob, lane2, read2, opp);
+    gutShot(bob, run, lane2, o2);
     await freeze(lane2, read2, true);
     return land(opp, o2, bob, lane2, read2, true);
   }
@@ -1018,6 +1028,7 @@ async function pairExchange(eng, bob, j1, j2, run){
         const read = j.ctrl.defend_read(j.char, bob.attacks, eng.rng, lane);
         bob.attacks.push(lane); j.reads.push(read);
         const out = eng._resolve(bob, lane, read, j);
+        gutShot(bob, run, lane, out);
         await freeze(lane, read, true); await muzzleFX();
         if (out===KILL || (out===WINGED && j.winged)){ j.alive=false; sfx.shot(); flare(); sfx.roar(); }
         else if (out===WINGED){ j.winged=true; sfx.wound(); } else sfx.block();
@@ -1062,13 +1073,14 @@ const STAGE_MOTIVE = STAGES;
 async function play(){
   const eng = new Engine(Math.floor(Math.random()*1e9));
   const bob = new Side(BOB, new HumanCtl());
-  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:2, deadeye:0, deadeyeBest:0, president_dead:false };
+  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:2, deadeye:0, deadeyeBest:0, president_dead:false, dishonor:0 };
   const pool = [];                                   // the men still out there
   $("hand").classList.remove("hurt"); hand("idle"); showPres(false); setHUD(run); setPoem(0); setLife(bob, null); iris(null); critical(false);
   await playScene("cold_open");
 
   for (let si=0; si<STAGE_MOTIVE.length; si++){
     stageStart(bob); bob.nerve = 1;                  // the all-in once a stage (+ perks)
+    const stageGuts = bob.gut_shots;
     hideOverlay(); clock("");
     sting('duel'); iris(null);
     await playScene("stage" + (si+1));
@@ -1099,7 +1111,8 @@ async function play(){
       await sleep(TIMING.bannerBeat); iris(null);
       await playScene("camera");                        // the lens turns toward Bob
       if (await askYesNo(`<span class="gold">DID YOU SEE THAT?</span> put it on the record?`)){
-        run.legend += 1; run.surveillance += 1; run.score += SCORE_ON_RECORD; setHUD(run);
+        run.legend += 1; run.surveillance += 1;
+        run.score += (run.dishonor||0) < DISHONOR_SHAMED ? SCORE_ON_RECORD : Math.floor(SCORE_ON_RECORD/2); setHUD(run);
       }
     }
     if (si===0){ await playScene("wound"); }
@@ -1108,9 +1121,11 @@ async function play(){
     if (si < STAGE_MOTIVE.length-1){
       if (run.anders_scrubs>0 && run.surveillance>0){ run.anders_scrubs--; run.surveillance=Math.max(0,run.surveillance-3); setHUD(run);
         await playScene("anders"); }
-      run.score += BONUS_BASE[si]; setHUD(run);
-      coinRain(); sfx.coins(); flare();
-      await story("✶ BONUS ✶", `the crowd throws coins — <span class="gold">+${BONUS_BASE[si]}</span>`);
+      if (bob.gut_shots === stageGuts){
+        run.score += BONUS_BASE[si]; setHUD(run);
+        coinRain(); sfx.coins(); flare();
+        await story("✶ BONUS ✶", `the crowd throws coins — <span class="gold">+${BONUS_BASE[si]}</span>`);
+      } else await story("NO COINS", `silence. <span class="lethal">nobody throws a coin for a gut shot.</span>`);
     }
     await perkPick(bob, si);                         // SECOND WIND heals; then 1 of 2 perks
   }
@@ -1232,11 +1247,13 @@ async function couplet(eng, bob, run){
     alive = pos >= bullets;
   }
   prompt("");
-  if (alive){ sfx.block(); await playScene("the_man"); }
+  const alone = alive && (run.dishonor||0) >= DISHONOR_SHAMED;       // she saw the gut shots. nobody is waiting
+  if (alive && !alone){ sfx.block(); await playScene("the_man"); }
+  else if (alone){ sfx.block(); await playScene("the_man_alone"); }
   else { sfx.shot(); flare(); await playScene("the_chamber"); }
   run.cleared += 2; setPoem(run.cleared);
-  const ending = alive ? "THE MAN" : "THE CHAMBER";
-  run.score += ending==="THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER; setHUD(run);
+  const ending = alone ? "THE MAN, ALONE" : alive ? "THE MAN" : "THE CHAMBER";
+  run.score += ending==="THE MAN, ALONE" ? SCORE_THE_MAN_ALONE : ending==="THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER; setHUD(run);
   return end(run, ending, eng);
 }
 
@@ -1276,6 +1293,7 @@ async function end(run, ending, eng){
   const man = ending==="THE MAN";
   const txt = ending.startsWith("DIED")
     ? `<p>${ending}.<br>an <span class="gold">unfinished sonnet</span>.</p>`
+    : ending==="THE MAN, ALONE" ? `<p>he walks out of the chamber.<br>she saw the gut shots. <span class="lethal">nobody is waiting.</span></p>`
     : man ? `<p>she pulls him from the chamber.<br>back to <span class="gold">frame one</span> — the kitchen.</p>`
           : `<p>the crowd got its count.<br><span class="lethal">the man is gone.</span></p>`;
   const board = saveScore(run.score, run.cleared);
@@ -1620,7 +1638,7 @@ async function howTo() {
     <p><b>Watch the man.</b> His <b>body</b> says <i>when</i> — don't bite on the twitch: fire during <i>steady…</i> and it's a false start.
     His <b>eyes</b> say <i>where</i> — mostly. <span class="k">^ ^</span> high · <span class="k">• •</span> level · <span class="k">v v</span> low.</p>
     <p>On <span class="big gold">DRAW!</span> the crosshair's on his chest — correct and <span class="k">FIRE</span>.
-    <span class="k">HEAD</span> = the headshot, the legend. <span class="k">CENTER</span> = the honest kill. <span class="k">WING</span> = a wound — he'll be back.</p>
+    <span class="k">HEAD</span> = the headshot, the legend. <span class="k">CENTER</span> = the honest kill. <span class="k">GUT</span> = a wound — he'll be back, and it's <span class="lethal">dishonor</span>: no coins from the crowd, and your family is watching.</p>
     <p>His dashed guard drifts to <i>your</i> habit. Break pattern. If he's first: his <b>eyes</b> come early and can lie —
     his <b>shoulder</b> swings late and never does. Guard before the window closes.</p>
     <p class="dim">Fast is fine, but accuracy is everything: the crosshair sways after the draw and settles. The head is small. Pull it wide and you miss.</p>

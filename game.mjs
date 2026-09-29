@@ -9,6 +9,9 @@ export const SCORE_DUEL = [100, 250, 500, 750];        // a KILL; a wing pays ha
 export const SCORE_ON_RECORD = 150, SCORE_REACH_TABLE = 1000, SCORE_THE_MAN = 5000, SCORE_THE_CHAMBER = 750;
 export const BONUS_BASE = [300, 500, 700];
 export const SCORE_PRESIDENT = 2000;
+// DISHONOR (mirror of cleveland_bob.py): gut shots Bob lands. No coins for a stage you gut-shot in; at
+// DISHONOR_SHAMED the record pays half, and surviving the roulette is THE MAN, ALONE (nobody waiting).
+export const DISHONOR_SHAMED = 3, SCORE_THE_MAN_ALONE = 2500;
 
 // KILL removes a problem (full). WING changes it (half). BLOCK postpones it (a quarter). Mirror of _beat_score.
 export function beatScore(si, opp) {
@@ -45,13 +48,14 @@ export function heyBobSmile(eng, bob, run) {
 
 // MY LAST RITES — the roulette; Bob's record loads it (a quiet man 1 bullet, a legend 3).
 export function lastRites(eng, bob, run) {
-  return roulette(eng, bob, bulletsFor(run.legend), eng.present) ? "THE MAN" : "THE CHAMBER";
+  if (!roulette(eng, bob, bulletsFor(run.legend), eng.present)) return "THE CHAMBER";
+  return run.dishonor >= DISHONOR_SHAMED ? "THE MAN, ALONE" : "THE MAN";
 }
 
 // hooks: callbacks let the cab render; headless parity passes no-ops + an auto-record policy.
 export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, hooks = {} } = {}) {
   const eng = new Engine(seed, hooks.present);
-  const run = { legend: 0, score: 0, cleared: 0, surveillance: 0, anders_scrubs: 2, president_dead: false };
+  const run = { legend: 0, score: 0, cleared: 0, surveillance: 0, anders_scrubs: 2, president_dead: false, dishonor: 0 };
   const bob = new Side(BOB, bobCtrl);
   const askRecord = onRecordAsk || (() => eng.rng.random() < autoRecord);   // human button OR auto policy
 
@@ -60,6 +64,7 @@ export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, 
   const die = (ending) => { const r = { ...run, ending }; hooks.gameOver && hooks.gameOver(r); return r; };
   for (let si = 0; si < STAGES.length; si++) {
     stageStart(bob);
+    const stageGuts = bob.gut_shots;
     hooks.stage && hooks.stage(si, STAGES[si]);
     for (let bi = 0; bi < DECISIONS_PER_STAGE; bi++) {
       run.surveillance += 1;
@@ -68,21 +73,23 @@ export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, 
       hooks.beat && hooks.beat(run, opp);
       if (fightBeat(eng, bob, opp, pool)) return die(`DIED — stage ${si + 1}, beat ${bi + 1}`);
       run.cleared += 1; run.score += beatScore(si, opp);
-      if (askRecord(run)) { run.legend += 1; run.surveillance += 1; run.score += SCORE_ON_RECORD; }
+      run.dishonor = bob.gut_shots;
+      if (askRecord(run)) { run.legend += 1; run.surveillance += 1; run.score += run.dishonor < DISHONOR_SHAMED ? SCORE_ON_RECORD : Math.floor(SCORE_ON_RECORD / 2); }
     }
     if (si === 1 && thePresident(eng, bob, run)) return die("DIED — THE PRESIDENT'S MAN");
     if (si === 2 && run.president_dead && heyBobSmile(eng, bob, run)) return die("DIED — HEY BOB, SMILE!");
     if (si < STAGES.length - 1) {
       if (run.anders_scrubs > 0 && run.surveillance > 0) { run.anders_scrubs -= 1; run.surveillance = Math.max(0, run.surveillance - 3); }
-      hooks.bonus && hooks.bonus(si, BONUS_BASE[si]);
-      run.score += BONUS_BASE[si];
+      run.dishonor = bob.gut_shots;
+      if (bob.gut_shots === stageGuts) { hooks.bonus && hooks.bonus(si, BONUS_BASE[si]); run.score += BONUS_BASE[si]; }
     }
     stageEnd(eng, bob, si, hooks.present);
   }
   run.score += SCORE_REACH_TABLE;
+  run.dishonor = bob.gut_shots;
   const ending = lastRites(eng, bob, run);
   run.cleared += 2;
-  run.score += ending === "THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER;
+  run.score += ending === "THE MAN, ALONE" ? SCORE_THE_MAN_ALONE : ending === "THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER;
   run.ending = ending;
   hooks.gameOver && hooks.gameOver(run);
   return run;
