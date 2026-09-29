@@ -426,7 +426,8 @@ const spriteFor = c => (c && SPRITES[c.name]) || null;
 // the nearest painted frame for a rig state (idleB→idleA etc. if a sheet lacks one)
 function spriteState(sp, st){
   if (sp.states.includes(st)) return st;
-  return { idleB:"idleA", twitch:"idleA", winged_draw:"winged_idle" }[st] || (st.startsWith("winged") ? "winged_idle" : "idleA");
+  return { idleB:"idleA", twitch:"idleA", winged_draw:"winged_idle", winged_hit:"winged_idle", down2:"down",
+           draw1:"draw", draw2:"draw", draw3:"draw" }[st] || (st.startsWith("winged") ? "winged_idle" : "idleA");
 }
 function render(){
   if (POSE.pair) return;
@@ -436,8 +437,9 @@ function render(){
     const st = spriteState(sp, POSE.state);
     const img = $("manImg"), src = sp.base + st + ".png";
     const scaleTo = () => {                                        // ONE scale: the standing frame's height = the box
-      const ref = (SPRITE_META[POSE.char.name] && SPRITE_META[POSE.char.name].refH) || 310;
-      img.style.height = (img.naturalHeight / ref * $("man").getBoundingClientRect().height) + "px";
+      const meta = SPRITE_META[POSE.char.name] || {}, box = $("man").getBoundingClientRect().height;
+      const rel = meta.hScale && meta.hScale[st];                 // a kneeling/fallen pose's height vs standing
+      img.style.height = (rel ? rel * box : img.naturalHeight / (meta.refH || 310) * box) + "px";
     };
     if (!img.src.endsWith(src)) { img.onload = () => { scaleTo(); placeEyes(sp, st); fitZones(); }; img.src = src; }
     else { scaleTo(); placeEyes(sp, st); fitZones(); }
@@ -446,6 +448,16 @@ function render(){
   hideEyes();
   $("manArt").textContent = figureArt(POSE.char, POSE.winged, POSE.eyes, POSE.state);
   fitZones();
+}
+// PAINTED ANIMATIONS (rig.mjs SPRITES[].anim): play a short frame sequence on the current man, ending on its
+// last frame. Returns a promise. A newer animation cancels an older one (the token).
+let _animTok = 0;
+async function animate(key, ms){
+  const sp = spriteFor(POSE.char); const seq = sp && sp.anim && sp.anim[key];
+  if (!seq || POSE.pair) return false;
+  const tok = ++_animTok;
+  for (const st of seq){ if (tok !== _animTok) return true; POSE.state = st; render(); await sleep(ms); }
+  return true;
 }
 // tiny eyes IN his sockets (anchors from the cutter) — the look follows POSE.eyes (the tell)
 function hideEyes(){ $("eyeL").style.display = $("eyeR").style.display = "none"; }
@@ -572,7 +584,8 @@ function hand(state){ const h = $("hand"); h.textContent = HANDS[state] || HANDS
 function iris(mode){ const i = $("iris"); i.classList.remove("tight","open"); if (mode) i.classList.add(mode); }
 const fmt = t => (t===Infinity ? "FALSE START" : t >= 9 ? "—" : t.toFixed(2)+"s");
 const dropFoe = () => { POSE.breathing = false;
-  if (spriteFor(POSE.char) && !POSE.pair){ POSE.state = "down"; render(); eyeInsert(null); }
+  if (spriteFor(POSE.char) && !POSE.pair){ eyeInsert(null); const sp = spriteFor(POSE.char);
+    if (sp.anim && sp.anim.down) animate("down", TIMING.fallFrame); else { POSE.state = "down"; render(); } }
   else { $("manArt").textContent = FOE_DOWN; fitZones(); } $("man").classList.remove("winged"); $("man").classList.add("down");
   flare(); sting('kill'); sfx.roar(); };   // the killshot hard-cuts to the painted kill + crowd roar — "DID YOU SEE THAT?"
 // the WINGED beat — a wound, NOT a kill: a blood-red flash + recoil stagger on the foe figure.
@@ -800,7 +813,10 @@ async function drawShoot(feint, opts={}){
   POSE.breathing = false;
   if (early) return { t: Infinity, lane: null, center: 0, falseStart: true, feint: feinted };
   centerAim(); iris("open"); hand("aim");
-  if (POSE.char && !POSE.pair && !bit) pose("draw");                                  // his hand snaps to the gun
+  if (POSE.char && !POSE.pair && !bit){                                                // his hand snaps to the gun
+    if (POSE.winged || !(spriteFor(POSE.char) && spriteFor(POSE.char).anim)) pose("draw");
+    else animate("draw", TIMING.animFrame);
+  }
   const t0 = performance.now();
   prompt(`<span class="big gold">DRAW!</span> &nbsp; <small>correct &amp; fire — go for the head</small>`);
   const fired = await new Promise(res => aimFire({ timeout: TIMING.drawTimeout, pres: !!opts.pres, shoot: true }).then(r => res({ ...r, at: performance.now() })));
@@ -997,7 +1013,7 @@ async function land(reader, out, attacker, lane, read, second=false){
   if (out===WINGED){
     sfx.shot();
     reader.winged=true; sfx.wound();
-    if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); fxAt("blood", 0.62, 0.62, 0.7); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
+    if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); fxAt("blood", 0.62, 0.62, 0.7); animate("winged", TIMING.fallFrame); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
     banner(you?"CRITICAL":"WINGED", you?"you're hit. one more and you're done — your hand won't settle":`${PR(reader.char).he}'ll be back — crippled`);
     setLife(bob, POSE.pair || foe); return {dead:null, out};
   }
@@ -1629,7 +1645,7 @@ async function twoPlayer(bangkok){
 }
 window.__two = { twoPlayer };
 // dev/QA hook: put the screen in any state for a screenshot (tools/_shots.mjs). Presentation only.
-window.__pose = { eyeInsert, fxAt, drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
+window.__pose = { animate, eyeInsert, fxAt, drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
   clock, overlay, hideOverlay, showGuard, zone:(l,c)=>$("z"+l).classList.add(c), clearZones, cylinder, SEATS,
   chars:{ BOB, MARSHAL, BATTER, PHOTOGRAPHER, PRESIDENTS_MAN, SEVEN_JOHN, SEVEN_JOHN_2, LINEUP }, Side, HumanCtl };
 

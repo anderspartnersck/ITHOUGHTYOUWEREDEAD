@@ -48,7 +48,7 @@ export const BATTER = ch("THE BATTER", "came down the interstate", BAT, { steadi
 const _h = (name, title, tell, feint, steadiness, read_skill, lie_to = null, pron = "he") =>
   ch(name, title, GUN, { steadiness, read_skill, tell, lie_to, feint, pron });
 // THE LINEUP — stage 1 is a visual tutorial: eyes carry info / trust the eyes over the body / the info can lie.
-export const H1_SCARED = _h("HUNTER 1", "scared stiff",            1.00, 0.00, -0.08, 0.30);
+export const H1_SCARED = _h("HUNTER 1", "the laughing cop",           1.00, 0.00, -0.08, 0.30);
 export const H2_QUIET  = _h("HUNTER 2", "all nerves, honest eyes", 1.00, 0.45, -0.02, 0.35, null, "she");
 export const H3_LIAR   = _h("HUNTER 3", "looks high, shoots low",  0.55, 0.15, -0.05, 0.40, HEAD);
 export const H4_STARE  = _h("HUNTER 4", "the stare",               0.75, 0.60,  0.02, 0.45);

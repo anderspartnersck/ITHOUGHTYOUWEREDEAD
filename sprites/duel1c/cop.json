@@ -1,0 +1,31 @@
+{
+ "rig": "cop",
+ "states": [
+  "idleA",
+  "twitch",
+  "draw1",
+  "draw2",
+  "draw3",
+  "draw",
+  "fire",
+  "winged_hit",
+  "winged_idle",
+  "winged_draw",
+  "hit_center",
+  "hit_head",
+  "down",
+  "down2"
+ ],
+ "refH": 560,
+ "eyes": {},
+ "hScale": {
+  "winged_hit": 0.97,
+  "winged_idle": 0.93,
+  "winged_draw": 0.74,
+  "hit_center": 0.8,
+  "hit_head": 0.98,
+  "down": 0.56,
+  "down2": 0.46
+ },
+ "note": "0929 color cycle; eyes are painted in (no sockets), so no eye anchors"
+}

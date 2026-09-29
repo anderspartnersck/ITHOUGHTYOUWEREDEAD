@@ -24,6 +24,8 @@ export const TIMING = {
   freeze: 650,                          // the READ / CLEAN freeze-frame
   bannerBeat: 450,
   cameraLens: 800,                      // DID YOU SEE THAT? — the lens turns toward Bob
+  animFrame: 70,                        // painted sprite animations: the draw (3 frames), per frame
+  fallFrame: 420,                       // down → down2 (the fall), and winged_hit → winged_idle
   sceneMinBeforeSkip: 250,              // a cutscene beat can't be skipped faster than this
   cylinderTick: 90, cylinderSpins: 14,  // the roulette spin
 };
@@ -481,8 +483,11 @@ export function bobFrame(eyes){ const e = (eyes && EYES[eyes] !== undefined ? EY
 // A character with an entry here draws his painted frames instead of ASCII; everyone else stays ASCII
 // until his sheet arrives. Frames cut by tools/cut_duel_sheet.py; eyes = sockets measured per frame.
 export const SPRITES = {
-  "HUNTER 1": { base:"sprites/duel1/hunter1_", meta:"sprites/duel1/hunter1.json",
-    states:["idleA","idleB","twitch","draw","fire","winged_idle","winged_draw","hit_center","hit_head","down"] },
+  // (0929) HUNTER 1 = the laughing cop from the cold open, in color — the full turn cycle
+  "HUNTER 1": { base:"sprites/duel1c/cop_", meta:"sprites/duel1c/cop.json",
+    states:["idleA","twitch","draw1","draw2","draw3","draw","fire","winged_hit","winged_idle","winged_draw",
+            "hit_center","hit_head","down","down2"],
+    anim:{ draw:["draw1","draw2","draw3","draw"], down:["down","down2"], winged:["winged_hit","winged_idle"] } },
 };
 export const HAND_SPRITES = { base:"sprites/duel1/hand_", states:["idle","aim","recoil","recoil2","fan","feint","hurt"] };
 export const FX_SPRITES = { base:"sprites/duel1/fx_", names:["flash1","flash2","flash3","blood","dust","flashbulb"] };
