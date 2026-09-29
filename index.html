@@ -129,6 +129,9 @@
   #world .bg{ position:absolute; inset:-8%;
     background:url('sprites/cabinet/duel.png') center 34%/cover no-repeat;
     filter:brightness(.2) blur(3px) saturate(.6) contrast(1.1) sepia(.4); transform:scale(1.15); }
+  /* the painted-in-code street plate (plate.mjs) — replaces the blurred duel.png when on */
+  #plate{ position:absolute; inset:0; width:100%; height:100%; display:none; filter:brightness(.82) saturate(.95); }
+  #world.plated #plate{ display:block; } #world.plated .bg{ display:none; }
   #world .grade{ position:absolute; inset:0; background:
     radial-gradient(120% 90% at 50% 40%, transparent 30%, rgba(5,5,8,.55) 72%, rgba(4,4,6,.9) 100%),
     linear-gradient(180deg, rgba(6,6,9,.6) 0%, rgba(6,6,9,.08) 26%, rgba(6,6,9,.12) 52%, rgba(4,4,6,.9) 100%); }
@@ -274,7 +277,7 @@
 </head>
 <body>
 <div id="cab"><div id="scene">
-  <div id="world"><div class="bg"></div><div class="grade"></div></div>
+  <div id="world"><canvas id="plate"></canvas><div class="bg"></div><div class="grade"></div></div>
   <div id="crowd"></div>
   <div id="hud"><div>BOB <b id="hBob" class="pips">▮▮</b></div><div>DISHONOR <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div><div>HIM <b id="hHim" class="pips">▮▮</b></div></div>
   <div id="poem">— · — · —</div>
@@ -312,6 +315,7 @@ import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STAN
   WINGED_SLOW, LEGEND_LOUD, CHAMBERS, bulletsFor, beatOpponent,
   PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST, QUICK_HAND_S, SELL_IT_SECOND,
   PERKS, PERK_PAIRS, stageStart } from "./engine.mjs";
+import { drawPlate } from "./plate.mjs";
 import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES, bobFrame,
   SPRITES, HAND_SPRITES, FX_SPRITES, EYE_CLOSEUPS } from "./rig.mjs";
 import { tournament as _tourSim, BOUT_EXCHANGES, BOB_TELL_2P, GUNMAN_PERK_PAIRS, LINEUP, PAIR_SLOT, SEVEN_JOHN, SEVEN_JOHN_2,
@@ -422,6 +426,10 @@ HAND_SPRITES.states.forEach(st => { const i = new Image(); i.src = HAND_SPRITES.
 FX_SPRITES.names.forEach(n => { const i = new Image(); i.src = FX_SPRITES.base + n + ".png"; });
 EYE_CLOSEUPS.looks.forEach(l => { const i = new Image(); i.src = EYE_CLOSEUPS.base + l + ".png"; });
 $("scene").classList.add("painted");                      // Bob's painted hand is on
+// THE STREET PLATE — Detroit painted in code (no palm trees). Sized to the scene; redrawn on resize.
+function paintPlate(){ const cv = $("plate"), r = $("scene").getBoundingClientRect();
+  cv.width = Math.max(320, Math.round(r.width)); cv.height = Math.max(200, Math.round(r.height)); drawPlate(cv, 7); $("world").classList.add("plated"); }
+paintPlate(); window.addEventListener("resize", paintPlate);
 const spriteFor = c => (c && SPRITES[c.name]) || null;
 // the nearest painted frame for a rig state (idleB→idleA etc. if a sheet lacks one)
 function spriteState(sp, st){
