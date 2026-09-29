@@ -429,6 +429,7 @@ export const SCENES = {
     { img:"sprites/attract/redo_3_throw.png", art:A.street, text:"\"go on, Bob. catch.\"", ms:2200 },
     { img:"sprites/attract/redo_4_gun_down.png", art:A.street, text:"it lands at his feet. the man across the street is already ready.", ms:2600, cls:"lethal" },
     { img:"sprites/attract/redo_5_drone_live.png", art:A.camera, text:"the city is already recording. LIVE.", ms:2800, cls:"lethal" },
+    { img:"sprites/attract/redo_6_kids_watching.png", art:A.kitchen_grey, text:"at home, the kids are watching Channel 6.", ms:3000 },
     { h:"I THOUGHT YOU WERE DEAD!", text:"a CLEVELAND BOB story", ms:1800 },
   ],
   stage1: [ { art:A.street, h:"STAGE 1: DEAD-EYE", text:"he fights for FAMILY. — learn to read people.", ms:2200 } ],
