@@ -431,7 +431,7 @@ export const SCENES = {
     { h:". . .", text:"DEAD-EYE — slow and warm. a lullaby before it was a theme.", ms:1600 },
     { img:"sprites/coldopen/kitchen_morning.jpg", art:A.kitchen, h:"FRAME ONE", text:"an ordinary morning for an Anders & Partners man. the books. a note on the fridge: still here.", ms:3400, cls:"warm" },
     { img:"sprites/coldopen/popcorn.jpg", art:A.kitchen, text:"the work can wait. a bowl of popcorn. a film.", ms:2600, cls:"warm" },
-    { img:"sprites/coldopen/president_coma.jpg", art:A.camera, h:"BREAKING", text:"the film never starts. the President of Michigan, in a coma.", ms:2800 },
+    { img:"sprites/coldopen/president_coma.jpg", art:A.camera, h:"BREAKING", text:"the film never starts. the President, in a coma.", ms:2800 },
     { stage:{ plate:"sprites/coldopen/popcorn.jpg", dim:true, layers:[
         { src:"sprites/coldopen/bob_couch_spill.png", x:50, y:-4, h:100 } ] },
       art:A.kitchen, h:"BANG.", text:"outside.", ms:1800, cls:"lethal", flash:"white" },
