@@ -422,14 +422,37 @@ const A = {
 // sheet); art = the ASCII fallback shown if the image is missing or fails. {name}/{winged} are filled by the caller (vars).
 // ms = how long the beat holds; any key skips after TIMING.sceneMinBeforeSkip.
 export const SCENES = {
-  // THE COLD OPEN (redo 0929, Joe's color set): frame one → the laugh → the throw → the gun at his feet →
-  // the city goes LIVE → straight into duel 1 (the cop IS the man across the street).
+  // THE COLD OPEN (1002, Joe's order): kitchen work → popcorn for a film → PRESIDENT IN COMA on TV → BANG outside → a purple flash
+  // (foreshadowing) → the rear-ender at the light turns into road rage, Bob sees it → the cop sees Bob see it →
+  // the throw and the gun at his feet, LAYERED on PLATE 1 → the city goes LIVE → his family watching → duel 1.
+  // A beat with `stage` is a layered shot: a painted plate (slow push) + cutouts; x/y = % of the frame
+  // (x = centre, y = feet up from the bottom), h = % of frame height, fx = arc (thrown) | drop (lands) | sway.
   cold_open: [
     { h:". . .", text:"DEAD-EYE — slow and warm. a lullaby before it was a theme.", ms:1600 },
-    { img:"sprites/attract/redo_1_kitchen.png", art:A.kitchen, h:"FRAME ONE", text:"an ordinary morning for an Anders & Partners man. a note on the fridge: still here.", ms:3400, cls:"warm" },
-    { img:"sprites/attract/redo_2_taunt.png", art:A.street, text:"a cop across the street, laughing. an accountant. unarmed.", ms:2600 },
-    { img:"sprites/attract/redo_3_throw.png", art:A.street, text:"\"go on, Bob. catch.\"", ms:2200 },
-    { img:"sprites/attract/redo_4_gun_down.png", art:A.street, text:"it lands at his feet. the man across the street is already ready.", ms:2600, cls:"lethal" },
+    { img:"sprites/coldopen/kitchen_morning.jpg", art:A.kitchen, h:"FRAME ONE", text:"an ordinary morning for an Anders & Partners man. the books. a note on the fridge: still here.", ms:3400, cls:"warm" },
+    { img:"sprites/coldopen/popcorn.jpg", art:A.kitchen, text:"the work can wait. a bowl of popcorn. a film.", ms:2600, cls:"warm" },
+    { img:"sprites/coldopen/president_coma.jpg", art:A.camera, h:"BREAKING", text:"the film never starts. the President of Michigan, in a coma.", ms:2800 },
+    { stage:{ plate:"sprites/coldopen/popcorn.jpg", dim:true, layers:[
+        { src:"sprites/coldopen/bob_couch_spill.png", x:50, y:-4, h:100 } ] },
+      art:A.kitchen, h:"BANG.", text:"outside.", ms:1800, cls:"lethal", flash:"white" },
+    { img:"sprites/coldopen/kitchen_dusk_flash.jpg", art:A.kitchen_grey, ms:650, flash:"purple" },
+    { img:"sprites/coldopen/accident_wide.jpg", art:A.street, text:"a rear-ender at the light on Maple.", ms:2400 },
+    { img:"sprites/coldopen/accident_rage.jpg", art:A.street, text:"then it wasn't an accident anymore.", ms:2600, cls:"lethal" },
+    { img:"sprites/coldopen/accident_looks.jpg", art:A.street, text:"the cop looks up. he saw Bob see it.", ms:2600 },
+    { stage:{ plate:"sprites/plates/plate1.jpg", layers:[
+        { src:"sprites/coldopen/cop_laugh.png", x:62, y:30, h:40 },
+        { src:"sprites/coldopen/bob_back.png", x:30, y:-12, h:98 } ] },
+      art:A.street, text:"he laughs. an accountant. unarmed.", ms:2600 },
+    { stage:{ plate:"sprites/plates/plate1.jpg", layers:[
+        { src:"sprites/coldopen/cop_laugh.png", x:62, y:30, h:40 },
+        { src:"sprites/coldopen/bob_catch.png", x:30, y:-12, h:98 },
+        { src:"sprites/coldopen/revolver.png", x:51, y:52, h:8, fx:"arc" } ] },
+      art:A.street, text:"\"go on, Bob. catch.\"", ms:2200 },
+    { stage:{ plate:"sprites/plates/plate1.jpg", layers:[
+        { src:"sprites/duel1c/cop_idleA.png", x:62, y:30, h:40 },
+        { src:"sprites/coldopen/bob_reach.png", x:27, y:-14, h:96 },
+        { src:"sprites/coldopen/revolver.png", x:50, y:4, h:9, fx:"drop" } ] },
+      art:A.street, text:"it lands at his feet. the man across the street is already ready.", ms:2600, cls:"lethal" },
     { img:"sprites/attract/redo_5_drone_live.png", art:A.camera, text:"the city is already recording. LIVE.", ms:2800, cls:"lethal" },
     { img:"sprites/attract/redo_6_kids_watching.png", art:A.kitchen_grey, text:"at home, his family is watching Channel 6.", ms:3200 },
     { h:"I THOUGHT YOU WERE DEAD!", text:"a CLEVELAND BOB story", ms:1800 },
