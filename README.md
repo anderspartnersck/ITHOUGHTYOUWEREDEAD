@@ -10,7 +10,7 @@ A Castle Killscreen game by **Anders & Partners**.
 >
 > The duel engine works and the shape is there. The cabinet art and the run's middle stretch are the unfinished parts.
 >
-> The finished Castle Killscreen titles are **[SUCK UP](https://anderspartnersck.github.io/suck-up/)**
+> The finished Castle Killscreen titles are **[SUCK UP](https://anderspartnersck.github.io/suck-up/3d.html?arcade)**
 > and **[ONE-TIMER: THE HIGH TABLE](https://anderspartnersck.github.io/high-table/)**. This repo
 > exists so the work can happen in the open, not because the work is done.
 

@@ -339,8 +339,9 @@ import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STAN
   PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST, QUICK_HAND_S, SELL_IT_SECOND,
   PERKS, PERK_PAIRS, stageStart } from "./engine.mjs";
 import { drawPlate } from "./plate.mjs";
+import { NEXT_SEVEN, NEXT_BY_NAME } from "./foes.mjs";
 import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES, bobFrame,
-  SPRITES, HAND_SPRITES, FX_SPRITES, EYE_CLOSEUPS } from "./rig.mjs";
+  SPRITES, HAND_SPRITES, FX_SPRITES, EYE_CLOSEUPS, whoName, whoLine } from "./rig.mjs";
 import { tournament as _tourSim, BOUT_EXCHANGES, BOB_TELL_2P, GUNMAN_PERK_PAIRS, LINEUP, PAIR_SLOT, SEVEN_JOHN, SEVEN_JOHN_2,
   BANGKOK_SHOTS } from "./engine.mjs";
 import { SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE,
@@ -961,11 +962,11 @@ async function exchange(eng, bob, opp, run, opts={}){
     if (shot.falseStart) await falseStart(opp.char, opp.winged);
     const youFirst = ta <= tb;
     attacker = youFirst ? bob : opp;
-    clock(`BOB <b>${fmt(ta)}</b> &nbsp;—&nbsp; ${opp.char.name} <b>${fmt(tb)}</b>${youFirst?"":' &nbsp;<span class="late">he\'s first</span>'}`);
+    clock(`BOB <b>${fmt(ta)}</b> &nbsp;—&nbsp; ${whoName(opp.char)} <b>${fmt(tb)}</b>${youFirst?"":' &nbsp;<span class="late">he\'s first</span>'}`);
     hideGuard();
   }
   const reader = attacker === bob ? opp : bob;
-  banner(attacker===bob ? "YOU'RE FIRST" : `${opp.char.name} IS FIRST`, attacker===bob ? "take the shot" : "watch his eyes", true);
+  banner(attacker===bob ? "YOU'RE FIRST" : `${whoName(opp.char)} IS FIRST`, attacker===bob ? "take the shot" : "watch his eyes", true);
 
   if (attacker === bob){
     // WHOA — only Bob, only when available, only in a ~600ms window; nothing = the clean shot you earned
@@ -1142,7 +1143,7 @@ async function play(){
       const opp = beatOpponent(si, bi, pool, (k, a) => { if (k === "returns") back = a.side; });
       if (back){                                       // I THOUGHT YOU WERE DEAD — a man you left standing walks back in
         drawMan(back.char, back.winged);
-        await playScene("returns", { name: back.char.name, winged: back.winged ? ", arm hanging uselessly." : "." });
+        await playScene("returns", { name: whoName(back.char), winged: back.winged ? ", arm hanging uselessly." : "." });
       }
       let res;
       if (Array.isArray(opp)){
@@ -1150,7 +1151,7 @@ async function play(){
         res = await pairExchange(eng, bob, opp[0], opp[1], run);
       } else {
         const boss = isBossChar(opp.char);
-        banner(opp.char.name, boss ? (BOSS_TELL[opp.char.name] || "BOSS") : opp.char.title, true);
+        banner(whoName(opp.char), boss ? (BOSS_TELL[opp.char.name] || "BOSS") : whoLine(opp.char), true);
         res = await exchange(eng, bob, opp, run);
         if (res.dead !== bob && opp.alive){ pool.push(opp); }
       }
@@ -1348,9 +1349,9 @@ async function end(run, ending, eng){
   if (ending.startsWith("DIED")) await playScene("died", { name: ending.replace(/^DIED — /, "") });
   const man = ending==="THE MAN";
   const txt = ending.startsWith("DIED")
-    ? `<p>${ending}.<br>an <span class="gold">unfinished sonnet</span>.</p>`
-    : ending==="THE MAN, ALONE" ? `<p>he walks out of the chamber.<br>she saw the gut shots. <span class="lethal">nobody is waiting.</span></p>`
-    : man ? `<p>she pulls him from the chamber.<br>back to <span class="gold">frame one</span> — the kitchen.</p>`
+    ? `<p>${ending}.<br>an <span class="gold">unfinished sonnet</span>.</p><p class="dim">"I ain't the main story. Just the last guy left in the prologue."</p>`
+    : ending==="THE MAN, ALONE" ? `<p>he walks out of the chamber.<br>she saw the gut shots. <span class="lethal">nobody is waiting.</span></p><p class="dim">"You didn't survive Detroit. You just outlasted your version of it."</p>`
+    : man ? `<p>she pulls him from the chamber.<br>back to <span class="gold">frame one</span> — the kitchen.</p><p class="dim">"You didn't survive Detroit. You just outlasted your version of it."</p>`
           : `<p>the crowd got its count.<br><span class="lethal">the man is gone.</span></p>`;
   const board = saveScore(run.score, run.cleared);
   const rows = board.slice(0,7).map((b,i)=> `<div class="${b.you?'you':''}">${String(i+1).padStart(2)}. ${b.ini.padEnd(3)} ${String(b.s).padStart(7)}  ${b.c}/${SONNET_LENGTH}${b.you?'  ◀ YOU':''}</div>`).join("");
@@ -1383,7 +1384,7 @@ function scene(cls, html){ ov.className = "show " + cls; ov.innerHTML = html; }
 const SCENES = [
   [0,   `<div class="credit">. . .  DEAD-EYE  . . .</div>`],
   [6,   `<p class="dim">FRAME ONE</p><h1 class="warm">a kitchen. morning light.</h1><p class="dim">coffee. his wife. an ordinary morning for an Anders &amp; Partners man.<br>this is the peak. it never gets better.</p>`],
-  [15,  `<h1>IN A WORLD —</h1><p>where the war was lost, and the city watches everything…</p>`],
+  [15,  `<h1>IN A WORLD —</h1><p>where the civil war was lost. Detroit didn't surrender.</p><p class="dim">now it's the last city they don't control — before the Algorithm gets overwritten by God.</p>`],
   [23,  `<p>…where the money isn't worth the paper it's printed on,</p><p class="dim">and the only ledger left is the body count…</p>`],
   [31,  `<h1>ONE MAN —</h1><p class="dim">a husband. an accountant. a nobody.</p>`],
   [38,  `<h1 class="blood">finds he is the deadliest hand alive.</h1><p class="dim">one mismatch. KILL. he didn't even try.</p>`],
@@ -1537,23 +1538,23 @@ async function twoDraw(bob, gun, seatB, seatG){
     else if (x.feint === "pending" && T[i] !== Infinity){ if (!sides[i].perks.has("SELL_IT")) T[i] += FEINT_COST; sides[i].exposed = true; if (i===0) $("zWING").classList.add("open"); }
   });
   if (st[0].early || st[1].early){ sfx.shot(); banner("CRACK —", `${st[0].early ? seatB.name : seatG.name} fired early. into the dirt.`, true); await sleep(TIMING.falseStartCrack); }
-  clock(`BOB <b>${fmt(T[0])}</b> &nbsp;—&nbsp; ${gun.char.name} <b>${fmt(T[1])}</b>`);
+  clock(`BOB <b>${fmt(T[0])}</b> &nbsp;—&nbsp; ${whoName(gun.char)} <b>${fmt(T[1])}</b>`);
   return T;
 }
 // one exchange, two humans. Returns the side that died (or null).
 async function twoExchange(eng, bob, gun, seatB, seatG){
   bob.exposed = gun.exposed = false;
-  drawMan(gun.char, gun.winged); p2draw(gun.char.name, gun.char.pron, null); setLife(bob, gun);
+  drawMan(gun.char, gun.winged); p2draw(whoName(gun.char), gun.char.pron, null); setLife(bob, gun);
   const [tb, tg] = await twoDraw(bob, gun, seatB, seatG);
   const bobFirst = tb <= tg;
   const attacker = bobFirst ? bob : gun, reader = bobFirst ? gun : bob;
   const aSeat = bobFirst ? seatB : seatG, rSeat = bobFirst ? seatG : seatB;
-  banner(bobFirst ? "BOB IS FIRST" : `${gun.char.name} IS FIRST`, `${aSeat.name} aims — ${rSeat.name} reads`, true);
+  banner(bobFirst ? "BOB IS FIRST" : `${whoName(gun.char)} IS FIRST`, `${aSeat.name} aims — ${rSeat.name} reads`, true);
   const lane = await hiddenLane(aSeat, 1300, `${aSeat.name}: <b>aim</b> (hidden) &nbsp; <small>${aSeat.keysTxt}</small>`);
   if (!lane){ banner("WIDE", `${aSeat.name} never picked a lane`, true); await sleep(TIMING.freeze); $("zWING").classList.remove("open"); return null; }
   prompt(`${aSeat.name} <span class="locked">LOCKED</span>`);
   const tell = eng._tell(attacker, lane, reader);
-  if (bobFirst) p2draw(gun.char.name, gun.char.pron, tell, `Bob's eyes: ${EYE_WORD[tell] || "—"}`);
+  if (bobFirst) p2draw(whoName(gun.char), gun.char.pron, tell, `Bob's eyes: ${EYE_WORD[tell] || "—"}`);
   else drawMan(gun.char, gun.winged, tell, gun.winged ? "winged_draw" : "draw");
   // the honest shoulder, late
   const cueT = setTimeout(() => { if (bobFirst) $("p2cue").textContent += `  ·  ◄══ his arm: ${EYE_WORD[lane]}`;
@@ -1574,7 +1575,7 @@ async function twoExchange(eng, bob, gun, seatB, seatG){
 }
 // one Bangkok volley, two humans: both fire AND guard at once (hidden). Returns [bobDied, gunDied].
 async function twoVolley(eng, bob, gun){
-  drawMan(gun.char, gun.winged); p2draw(gun.char.name, gun.char.pron, null); setLife(bob, gun);
+  drawMan(gun.char, gun.winged); p2draw(whoName(gun.char), gun.char.pron, null); setLife(bob, gun);
   for (const c of ["3","2","1"]){ banner("BANGKOK RULES", c, true); await sleep(420); }
   banner("BANG!", "fire, then guard — both at once (hidden)", true);
   const [pb, pg] = await hiddenVolley(1800);
@@ -1594,7 +1595,7 @@ async function twoVolley(eng, bob, gun){
 async function twoGunmanPerk(gun, seatG){
   const k = gun.perks.size; if (k >= GUNMAN_PERK_PAIRS.length) return;
   const [a, b] = GUNMAN_PERK_PAIRS[k];
-  overlay(`<h1>${seatG.name} — ${gun.char.name} SURVIVED</h1><p class="dim">pick one for this gunman</p>
+  overlay(`<h1>${seatG.name} — ${whoName(gun.char)} SURVIVED</h1><p class="dim">pick one for this gunman</p>
     <p><span class="k">1</span> <b class="gold">${PERKS[a][0]}</b> — ${PERKS[a][1]}</p><p><span class="k">2</span> <b class="gold">${PERKS[b][0]}</b> — ${PERKS[b][1]}</p>`);
   const pick = await askButtons("", [{ id:"bG1", html:PERKS[a][0], val:a, keys:["Digit1"] }, { id:"bG2", html:PERKS[b][0], val:b, keys:["Digit2"] }]);
   gun.perks.add(pick); if (pick === "SECOND_WIND") gun.winged = false; if (pick === "FLESH_WOUND") gun.flesh = 1;
@@ -1644,7 +1645,7 @@ async function twoRound(bangkok, bobSeat){
         beaten++; setPoem(beaten); continue;
       }
       const gun = new Side({ ...LINEUP[si][bi], showboat:true }, new HumanCtl());
-      banner(`${gun.char.name}`, `${gun.char.title}${gun.char.pron==="she" ? " — she" : ""}`, true); await sleep(900);
+      banner(`${whoName(gun.char)}`, `${whoLine(gun.char)}${gun.char.pron==="she" ? " — she" : ""}`, true); await sleep(900);
       if (bangkok){
         let over = false;
         for (let x=0; x<BANGKOK_SHOTS; x++){
@@ -1705,16 +1706,53 @@ async function howTo() {
     <div class="start">click / press any key — drop the quarter</div>`);
   await nextKey(() => true); hideOverlay();
 }
-async function startGame() {
-  await howTo();
+async function startGame(skipHow=false) {
+  if (!skipHow) await howTo();
   overlay(`<h1>HOW MANY?</h1><p><span class="k">1</span> one player — the story</p>
     <p><span class="k">2</span> two players — THE TOURNAMENT (P2 plays every gunman) &nbsp; <span class="k">B</span> two players, <span class="lethal">BANGKOK RULES</span></p>
+    <p><span class="k">R</span> THE ROSTER — face any one of them <span class="gold">(the next seven are here)</span></p>
+    <p class="dim">"You want out? You need someone. Until you don't."</p>
     <p class="dim">(any other key = one player)</p>`);
   const k = await nextKey(() => true);
   hideOverlay();
   if (k === "Digit2") return twoPlayer(false);
   if (k === "KeyB") return twoPlayer(true);
+  if (k === "KeyR") return roster();
   play();
+}
+
+// THE ROSTER (1026) — face any one man, one bout: up to BOUT_EXCHANGES exchanges, or until somebody drops.
+// THE NEXT SEVEN (web/foes.mjs, Joe's unused Detroit roster) fight here before any of them is slotted into the
+// sonnet. Practice only: nothing scored, nothing saved, the same exchange() the story uses.
+async function roster(){
+  const canon = LINEUP.flat().filter(Boolean);
+  for (;;){
+    overlay(`<h1>THE ROSTER</h1><p class="dim">the next seven — Joe's Detroit roster, never seen on the street before</p>`
+      + NEXT_SEVEN.map((x,i) => `<p><span class="k">${i+1}</span> <b>${x.char.name}</b> — <span class="dim">${x.read}</span></p>`).join("")
+      + `<p class="dim">the lineup</p><p>` + canon.map((c,i) => `<span class="k">${String.fromCharCode(65+i)}</span> ${whoName(c)}`).join(" &nbsp; ")
+      + `</p><div class="start">ESC — back</div>`);
+    const k = await nextKey(c => c === "Escape" || /^Digit[1-7]$/.test(c) || (/^Key[A-Z]$/.test(c) && c.charCodeAt(3) - 65 < canon.length));
+    hideOverlay();
+    if (k === "Escape") return startGame(true);
+    await rosterBout(k.startsWith("Digit") ? NEXT_SEVEN[+k.slice(5) - 1].char : canon[k.charCodeAt(3) - 65]);
+  }
+}
+async function rosterBout(char){
+  const eng = new Engine(Math.floor(Math.random()*1e9));
+  const bob = new Side(BOB, new HumanCtl()), opp = new Side(char, new AIController());
+  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:0, deadeye:0, deadeyeBest:0, president_dead:false, dishonor:0 };
+  $("hand").classList.remove("hurt"); hand("idle"); showPres(false); setHUD(run); setPoem(0); setLife(bob, null); iris(null); critical(false);
+  clock(""); sting('duel'); stagePlate(0);
+  const nx = NEXT_BY_NAME[char.name];
+  banner(whoName(char), nx ? nx.read : isBossChar(char) ? (BOSS_TELL[char.name] || "BOSS") : whoLine(char), true);
+  await sleep(TIMING.bannerBeat);
+  for (let i = 0; i < BOUT_EXCHANGES && bob.alive && opp.alive; i++){
+    await exchange(eng, bob, opp, run); clearZones(); await sleep(TIMING.bannerBeat); iris(null);
+  }
+  const P0 = PR(char);
+  if (!bob.alive) await story(`DIED — ${whoName(char)}`, nx ? `<span class="dim">${nx.line}</span>` : "");
+  else if (!opp.alive) await story(`${P0.HE}'S DOWN`, `${whoName(char)}.${nx ? ` <span class="dim">${nx.line}</span>` : ""}`);
+  else await story(`${P0.HE} WALKS`, `${BOUT_EXCHANGES} exchanges and nobody dropped.${opp.winged ? ` ${P0.He}'s winged.` : ""}`);
 }
 
 // ---- ARCADE GAMEPAD (1-PLAYER) — self-contained poll loop, no engine refactor, no external lib.
@@ -1777,7 +1815,7 @@ function boot() {
   banner("", ""); prompt(""); clearZones(); setPoem(0);
   startGamepad();
   overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
-    <p class="dim">Anders &amp; Partners</p><div class="start">INSERT COIN — press any key</div>`);
+    <p class="dim">Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">INSERT COIN — press any key</div>`);
   nextKey(() => true).then(() => { try{ ac().resume(); }catch(e){} attract(); });   // gesture unlocks audio (mp3 + sfx), then the trailer
 }
 boot();

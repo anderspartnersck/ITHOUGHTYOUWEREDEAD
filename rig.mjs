@@ -46,6 +46,14 @@ const HATS = {
   earpc:  "      .-''-.)",
   mars:   "      ._==_.",
   hair:   "     .~~~~~.",          // a gunwoman (pron "she") — the template body until her own sprite
+  // THE NEXT SEVEN (1026, web/foes.mjs) — DRAFT hats until their sprites exist
+  zip:    "     _.=Z=._",           // ZIP NEUTRON: scooter goggles
+  spin:   "     .~~~~~.▯",          // SPINMOM: the phone, held up, always posting
+  chip:   "     .~[#]~.",           // PHOEBE PHREAK: the chip
+  ghost:  "     .:::::.",           // COUNCILWOMAN GHOST: hologram static
+  tow:    "     _.---._J",          // THE TOW TRADER: the hook
+  halo:   "     ( ‾‾‾ )",           // DETROIT JESUS: the halo (might be a scam)
+  debt:   "     _[ $ ]_",           // BANKRUPTCY BOY: the Algorithm's tag on him
 };
 
 // ---------------------------------------------------------------- THE HUNTER RIG (the template body)
@@ -293,6 +301,8 @@ export const PRESIDENT_ART = {
    on the broadcast`,
 };
 
+const NEXT_HATS = { "ZIP NEUTRON":"zip", "SPINMOM":"spin", "PHOEBE PHREAK":"chip", "COUNCILWOMAN GHOST":"ghost",
+                    "THE TOW TRADER":"tow", "DETROIT JESUS":"halo", "BANKRUPTCY BOY":"debt" };   // web/foes.mjs
 // which rig a character wears (until his own sprite exists), and his hat
 const RIGS = { hunter: HUNTER, marshal: MARSHAL, batter: BATTER, photographer: PHOTOGRAPHER };
 export function rigFor(char){
@@ -302,6 +312,7 @@ export function rigFor(char){
   if (n === "THE PHOTOGRAPHER") return { rig:"photographer", hat:"bare" };
   if (n === "SEVEN-JOHN" && char.pron !== "she") return { rig:"hunter", hat:"seven" };
   if (n === "THE PRESIDENT'S MAN") return { rig:"hunter", hat:"earpc" };
+  if (NEXT_HATS[n]) return { rig:"hunter", hat:NEXT_HATS[n] };
   if (char && char.pron === "she") return { rig:"hunter", hat:"hair" };
   if (n === "HUNTER 1") return { rig:"hunter", hat:"bare" };
   if (n === "HUNTER 2") return { rig:"hunter", hat:"cap" };
@@ -368,7 +379,8 @@ const A = {
            .-.    ║    .-''-.
           |o o|   ║    | o o|)   his man
           /|#|\   ║    /|██|\
-      THE PRESIDENT          `,
+      THE PRESIDENT          
+   "He didn't win an election. He outlasted the recount."`,
   broadcast: String.raw`
    ┌────────────────────────────────┐
    │ ● LIVE   OFFICE OF AUTONOMOUS  │
@@ -378,6 +390,7 @@ const A = {
    │    ._\_/_.    OF MICHIGAN       │
    │               — DEAD —          │
    │   "DID YOU SEE THAT?"           │
+   │   SEEN / MEASURED / ERASED.     │
    └────────────────────────────────┘`,
   railyard: String.raw`
        ║        ║        ║        ║
@@ -393,6 +406,7 @@ const A = {
       /|██|\              /|██|\
      you know a Seven-John when you see one.
           he's the one still standing.
+   every district has a Seven-John. nobody knows how many are real.
                 there are two.`,
   crowd: String.raw`
    mnhñmnhmñnhmnñhmnhñmnhmñnhmnñhmnhñmnh
@@ -460,7 +474,7 @@ export const SCENES = {
   stage1: [ { art:A.street, h:"STAGE 1: DEAD-EYE", text:"he fights for FAMILY. — learn to read people.", ms:2200 } ],
   stage2: [ { art:A.street, h:"STAGE 2: THE RECORD", text:"he fights for SURVIVAL & FOOD. — now they read Bob.", ms:2200 } ],
   stage3: [ { art:A.crowd, h:"STAGE 3: THE COUNT", text:"THE VOLTA. nothing left now but the count.", ms:2600, cls:"gold" } ],
-  stage4: [ { art:A.railyard, h:"STAGE 4: THE LAST OPTION", text:"he fights for a WAY OUT. the rail yard at the edge of the city.", ms:2600 } ],
+  stage4: [ { art:A.railyard, h:"STAGE 4: THE LAST OPTION", text:"he fights for a WAY OUT. the rail yard at the edge of the city. — the Last Option Terminal is real. you just have to reach it before the Warden remembers your name.", ms:3600 } ],
   returns: [
     { art:A.street, h:"a figure walks back into the street —", text:"{name}{winged}", ms:1700 },
     { h:"I THOUGHT YOU WERE DEAD!", text:"you didn't finish it. he did not forget.", ms:1500, cls:"lethal" },
@@ -489,6 +503,28 @@ export const SCENES = {
   ],
   died: [ { art:A.body, h:"DIED", text:"{name}", ms:2400, cls:"lethal" } ],
 };
+
+// ---------------------------------------------------------------- WHO'S ACROSS THE STREET (1026, Detroit lore refresh)
+// Display identity only: the engine names (and so the odds, parity, SPRITES keys) never change. Names and lines are
+// verbatim from Joe's Escape From Detroit gang roster (Escape_From_Detroit_Last_Option_Gangs_Pitch.txt); the slot
+// each one fills is a proposal (docs/DETROIT-LORE-REFRESH.md). A man not listed keeps his engine name and title.
+export const WHO = {
+  "HUNTER 5":  { name:"THE PETTY CASHER",  line:"lives inside a hollowed-out ATM. \"Audit this!\"" },
+  "HUNTER 7":  { name:"LANA THE DOWNTICK", line:"\"The only market that matters is yours.\"" },
+  "HUNTER 8":  { name:"CHEDDAR JULES",     line:"\"Clean ain't clean unless it gleams.\"" },
+  "HUNTER 10": { name:"MARS THE FORGOTTEN", line:"\"Left in orbit. Landed in Detroit.\"" },
+  "HUNTER 11": { name:"PILLBOY SANDERS",   line:"slingin' Clean scripts out of a fake clinic." },
+  // THE NEXT SEVEN (web/foes.mjs): the rest of the roster; not in the lineup yet (THE ROSTER mode + the Gunslinger Engine)
+  "ZIP NEUTRON":        { name:"ZIP NEUTRON",        line:"slings hacked electric scooters rigged to explode on contact." },
+  "SPINMOM":            { name:"SPINMOM",            line:"\"Her child was fake. Her posts are real.\"" },
+  "PHOEBE PHREAK":      { name:"PHOEBE PHREAK",      line:"augmented with illegal narrative-enhancement chips." },
+  "COUNCILWOMAN GHOST": { name:"COUNCILWOMAN GHOST", line:"a hologram running campaigns out of memory archives." },
+  "THE TOW TRADER":     { name:"THE TOW TRADER",     line:"a tow truck full of stolen storylines." },
+  "DETROIT JESUS":      { name:"DETROIT JESUS",      line:"claims to be the reborn spirit of the city." },
+  "BANKRUPTCY BOY":     { name:"BANKRUPTCY BOY",     line:"survived six personal collapses." },
+};
+export const whoName = c => (c && WHO[c.name] && WHO[c.name].name) || (c && c.name) || "";
+export const whoLine = c => (c && WHO[c.name] && WHO[c.name].line) || (c && c.title) || "";
 
 // BOB — seen from across the street (the 2P view: the gunman's player looks AT Bob). Glasses; eyes overlay.
 export const BOB_ART = String.raw`      _____
