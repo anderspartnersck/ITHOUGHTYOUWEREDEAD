@@ -73,6 +73,15 @@
   #overlay{ position:absolute; inset:0; background:rgba(3,4,7,.92); display:none; flex-direction:column;
     align-items:center; justify-content:center; text-align:center; padding:6% 8%; gap:.5em; }
   #overlay.show{ display:flex; }
+  #pausemenu{ position:fixed; inset:0; z-index:9999; background:rgba(3,4,7,.97); display:none; flex-direction:column; align-items:center; justify-content:center; gap:1.2vh; text-align:center; padding:4vh 6vw; }
+  #pausemenu.show{ display:flex; }
+  #pausemenu h1{ font-size:clamp(22px,6vh,54px); font-weight:900; font-style:italic; color:var(--bone); margin-bottom:2vh; }
+  #pausemenu p{ font-size:clamp(14px,2.4vh,22px); max-width:820px; }
+  #pausemenu .pi{ cursor:pointer; font-weight:800; letter-spacing:2px; color:var(--dim); font-size:clamp(18px,3.4vh,30px); }
+  #pausemenu .pi.sel{ color:var(--gold); }
+  #pausemenu .k{ border:1px solid var(--gold); color:var(--gold); padding:0 .4em; border-radius:3px; }
+  #pausemenu .gold{ color:var(--gold); } #pausemenu .dim{ color:var(--dim); }
+  #pausemenu .start{ margin-top:2vh; color:var(--gold); letter-spacing:3px; }
   #overlay h1{ font-size:clamp(22px,6vh,54px); font-weight:900; font-style:italic; color:var(--bone);
     letter-spacing:1px; }
   #overlay .credit{ color:var(--gold); letter-spacing:3px; font-size:clamp(11px,2vh,16px); }
@@ -721,12 +730,55 @@ const KEYLANE = { ArrowUp:HEAD, KeyW:HEAD, Digit1:HEAD, ArrowDown:WING, KeyS:WIN
 // any "press any key" beat. Predicates that demand a specific code still ignore the tap.
 function nextKey(valid){
   return new Promise(res => {
-    const cleanup = () => { window.removeEventListener("keydown", k); window.removeEventListener("pointerdown", p); };
+    const w = { esc: valid("Escape") && !valid("__probe") }; WAITERS.add(w);          // UI-AUDIT 1110: the pause gate (below)
+    const cleanup = () => { WAITERS.delete(w); window.removeEventListener("keydown", k); window.removeEventListener("pointerdown", p); };
     const k = e => { if (valid(e.code)) { cleanup(); res(e.code); } };
     const p = () => { if (valid("Pointer")) { cleanup(); res("Pointer"); } };
     window.addEventListener("keydown", k); window.addEventListener("pointerdown", p);
   });
 }
+// ===== UI-AUDIT 1110: THE PAUSE MENU — ESC / P / pad START, BETWEEN beats only (whenever the game is waiting on a key).
+// A live draw is timed, so a pause can't freeze it fairly: mid-duel the keys pass through untouched, as before.
+// RESUME · HOW TO PLAY · QUIT TO TITLE (a clean reload = the title). Keys never reach the game while it's open.
+const WAITERS = new Set(); let RUN = false;
+const PAUSE = { on:false, i:0, how:false };
+const pauseEl = document.createElement("div"); pauseEl.id = "pausemenu"; document.body.appendChild(pauseEl);
+pauseEl.addEventListener("pointerdown", e => e.stopPropagation());
+const PITEMS = [["RESUME", () => closePause()], ["HOW TO PLAY", () => { PAUSE.how = true; drawPause(); }],
+  ["QUIT TO TITLE", () => { PAUSE.confirm = true; drawPause(); }]]
+  .concat(new URLSearchParams(location.search).get("from") === "keep" ? [["QUIT TO ARCADE", () => { location.href = "../../COLEMAN'S KEEP.html"; }]] : []);   // Q259
+function drawPause(){
+  pauseEl.className = PAUSE.on ? "show" : "";
+  if (!PAUSE.on) return;
+  if (PAUSE.how){ pauseEl.innerHTML = `<h1>HOW TO PLAY</h1><p>Watch the man. His <b>body</b> says <i>when</i>, his <b>eyes</b> say <i>where</i> (mostly).
+    On <span class="gold">DRAW!</span> aim and fire: <span class="k">↑</span> HEAD · <span class="k">C</span> CENTER · <span class="k">↓</span> GUT/WING — or the light pistol.</p>
+    <p><span class="k">F</span> during <i>steady…</i> sells your shoulder. <span class="k">E</span> / right-click on <span class="k">WHOA!</span> fans the hammer.</p>
+    <p class="dim">KILL removes him. WING changes him. BLOCK postpones him. You are meant to lose.</p>
+    <p class="dim">ESC pauses between duels (a live draw can't be paused).</p><div class="start">any key — back</div>`; return; }
+  if (PAUSE.confirm){ pauseEl.innerHTML = `<h1>QUIT TO TITLE?</h1><p class="dim">this run is over</p>
+    <p><span class="k">Y</span> / ENTER yes &nbsp;·&nbsp; <span class="k">N</span> / ESC no</p>`; return; }
+  pauseEl.innerHTML = `<h1>PAUSED</h1>` + PITEMS.map(([t], i) => `<p class="pi${i === PAUSE.i ? " sel" : ""}" data-i="${i}">${i === PAUSE.i ? "▶ " : ""}${t}</p>`).join("")
+    + `<p class="dim" style="margin-top:2vh">↑ ↓ choose · ENTER / FIRE go · ESC resume</p>`;
+  pauseEl.querySelectorAll(".pi").forEach(el => el.onclick = () => { PAUSE.i = +el.dataset.i; PITEMS[PAUSE.i][1](); });
+}
+function openPause(){ PAUSE.on = true; PAUSE.i = 0; PAUSE.how = false; PAUSE.confirm = false; drawPause(); }
+function closePause(){ PAUSE.on = false; drawPause(); }
+window.addEventListener("keydown", e => {
+  const c = e.code;
+  if (PAUSE.on){
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (PAUSE.how){ PAUSE.how = false; drawPause(); return; }
+    if (PAUSE.confirm){ if (c === "KeyY" || c === "Enter" || c === "Space") location.reload(); else if (c === "KeyN" || c === "Escape"){ PAUSE.confirm = false; drawPause(); } return; }
+    if (c === "Escape" || c === "KeyP") closePause();
+    else if (c === "ArrowUp" || c === "KeyW"){ PAUSE.i = (PAUSE.i + PITEMS.length - 1) % PITEMS.length; drawPause(); }
+    else if (c === "ArrowDown" || c === "KeyS"){ PAUSE.i = (PAUSE.i + 1) % PITEMS.length; drawPause(); }
+    else if (c === "Enter" || c === "Space") PITEMS[PAUSE.i][1]();
+    return;
+  }
+  if ((c === "Escape" || c === "KeyP") && RUN && WAITERS.size && ![...WAITERS].some(w => w.esc && c === "Escape")){
+    e.preventDefault(); e.stopImmediatePropagation(); openPause();
+  }
+}, true);
 async function pressAny(label0){ prompt(label0); await nextKey(()=>true); }
 
 // ===== LIGHT-PISTOL AIM — the fused squeeze: WHERE the crosshair sits = the lane,
@@ -1707,6 +1759,7 @@ async function howTo() {
   await nextKey(() => true); hideOverlay();
 }
 async function startGame(skipHow=false) {
+  RUN = true;
   if (!skipHow) await howTo();
   overlay(`<h1>HOW MANY?</h1><p><span class="k">1</span> one player — the story</p>
     <p><span class="k">2</span> two players — THE TOURNAMENT (P2 plays every gunman) &nbsp; <span class="k">B</span> two players, <span class="lethal">BANGKOK RULES</span></p>
@@ -1802,6 +1855,8 @@ function startGamepad(){
         const feintB = !!(window.Ghost ? Ghost.btn(gp, 2) : false);        // button 2 = sell the shoulder (feint)
         if (feintB && !startGamepad._f) window.dispatchEvent(new KeyboardEvent("keydown", { key:"f", code:"KeyF", bubbles:true }));
         startGamepad._f = feintB;
+        const startB = !!(window.Ghost ? Ghost.btn(gp, 9) : false);       // START = pause (UI-AUDIT 1110)
+        if (startB && !startGamepad._s) key("Escape"); startGamepad._s = startB;
         if (fire && !lastFire) key(" ");                               // rising-edge FIRE / advance / coin
         lastFire = fire;
       }
@@ -1812,6 +1867,7 @@ function startGamepad(){
 }
 
 function boot() {
+  RUN = false;
   banner("", ""); prompt(""); clearZones(); setPoem(0);
   startGamepad();
   overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
