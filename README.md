@@ -1,17 +1,10 @@
-> **STATUS: WORKING BUILD, LIVE ON GITHUB PAGES. Not a finished game.**
-> - The game: <https://anderspartnersck.github.io/ITHOUGHTYOUWEREDEAD/>
-> - The MEAN STREETS desktop cabinet: <https://anderspartnersck.github.io/ITHOUGHTYOUWEREDEAD/cab_desktop.html>
->
-> The duel engine works and the whole run plays start to finish. The art is partly done.
-
 # I THOUGHT YOU WERE DEAD!
+
+**Play it in your browser: <https://anderspartnersck.github.io/ITHOUGHTYOUWEREDEAD/>**
 
 A Cleveland Bob story. An arcade tragedy set in Detroit.
 
-A Castle Killscreen game by **Anders & Partners**. The finished Castle Killscreen titles are
-**[SUCK UP](https://anderspartnersck.github.io/suck-up/3d.html?arcade)** and
-**[ONE-TIMER: THE HIGH TABLE](https://anderspartnersck.github.io/high-table/)**. This repo exists so the
-work can happen in the open, not because the work is done.
+**Status:** plays start to finish; the art is partly done (much of the cast is still drawn in ASCII).
 
 ## About
 
@@ -62,37 +55,17 @@ gets further wins. Picks are hidden keypresses, so one screen is fair.
 
 Gamepads 1 and 2 also work (standard layout): stick up/down aims, A draws, Y aims center, X feints.
 
-## The pages
+Built for a desktop browser with a mouse, keyboard or gamepad. High scores are kept only in your own browser.
 
-- **[index.html](index.html)** (the bare URL): the game, edge to edge.
-- **[cab_desktop.html](cab_desktop.html)**: the MEAN STREETS cabinet. A slow push into the cabinet art, the logo, then the live
-  game over the control deck. `?view=cab` shows the whole cabinet, `?nointro` skips the intro, `?bare` shows the screen alone.
-  `cab.html` and `cab_1up.html` just redirect here.
+## The cabinet
 
-## What still needs work
+**[MEAN STREETS](https://anderspartnersck.github.io/ITHOUGHTYOUWEREDEAD/cab_desktop.html)** plays the same game
+inside its arcade cabinet: a slow push into the cabinet art, the logo, then the live game over the control deck.
 
-- Art is partial. The cold open, one gunman (the laughing cop), Bob's gun hand, the eye close-ups and the big-moment stills
-  are painted. The rest of the cast is still drawn in ASCII.
-- Built for a desktop browser with a mouse or keyboard (or a gamepad).
-- The high-score table is kept only in your own browser.
-
-## Rebuilding this bundle
-
-This repo is **generated**. Never edit it directly. Everything here is built from the private Castle
-Killscreen tree, and this README's source is `tools/PAGES_README.md` there:
-
-```
-cd "ANDERS CASTLE KILLSCREEN/I THOUGHT YOU WERE DEAD"
-python3 tools/build_pages.py
-```
-
-The bundler shrinks art by **resolution, not by pruning**: these engines build most asset paths by
-string concatenation, so a static scan can't see what's used, and a wrongly-cut sprite doesn't error.
-It just silently fails to draw.
+**Options** (add to the cabinet link): `?view=cab` shows the whole cabinet · `?nointro` skips the intro ·
+`?bare` shows the screen alone.
 
 ## Credits
 
 Created by **Joseph Coleman**, with Claude, ChatGPT, and Blender.
-Anders & Partners.
-
-<sub>Generated from the private Castle Killscreen tree. Edit there, not here.</sub>
+A Castle Killscreen game by Anders & Partners.
