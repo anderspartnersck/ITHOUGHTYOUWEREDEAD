@@ -339,6 +339,8 @@
   <div id="overlay"></div>
 </div></div>
 
+<script>window.CK_BOOT_OWN_GATE = true;   /* the boot title card ("press any key") is this game's own gate = the audio unlock */</script>
+<script src="lib/ckboot.js?v=1"></script>   <!-- CK BOOT STANDARD (BOOT-STANDARD.md): unlock + holds -->
 <script src="lib/ghost.js?v=1"></script>
 <script type="module">
 import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STANCES,
@@ -728,10 +730,11 @@ function hideOverlay(){ $("overlay").classList.remove("show"); }
 const KEYLANE = { ArrowUp:HEAD, KeyW:HEAD, Digit1:HEAD, ArrowDown:WING, KeyS:WING, Digit3:WING, Digit2:CENTER, KeyC:CENTER };
 // nextKey now resolves on a TAP too (pointerdown), so a no-keyboard light-gun can advance
 // any "press any key" beat. Predicates that demand a specific code still ignore the tap.
-function nextKey(valid){
+function nextKey(valid, onWaiter){
   return new Promise(res => {
     const w = { esc: valid("Escape") && !valid("__probe") }; WAITERS.add(w);          // UI-AUDIT 1110: the pause gate (below)
     const cleanup = () => { WAITERS.delete(w); window.removeEventListener("keydown", k); window.removeEventListener("pointerdown", p); };
+    w._cleanup = cleanup; if (onWaiter) onWaiter(w);                                   // CK BOOT: the title's idle timer can retire it
     const k = e => { if (valid(e.code)) { cleanup(); res(e.code); } };
     const p = () => { if (valid("Pointer")) { cleanup(); res("Pointer"); } };
     window.addEventListener("keydown", k); window.addEventListener("pointerdown", p);
@@ -1411,6 +1414,7 @@ async function end(run, ending, eng){
     <div class="dim">THE RUN: ${run.cleared}/${SONNET_LENGTH} · SCORE ${run.score.toLocaleString()} · LEGEND ${run.legend}</div>
     <div id="board">${rows}</div>
     <div class="start">press any key — drop a quarter, you're back</div>`);
+  await sleep(900);                                   // CK BOOT STANDARD: a short hold so a panic-press doesn't skip the results
   await nextKey(()=>true);
   boot();
 }
@@ -1504,7 +1508,18 @@ function attract() {
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
-  nextKey(() => true).then(() => { attractOn = false; try { AUDIO.pause(); AUDIO.currentTime = 0; } catch {} startGame(); });
+  // CK BOOT STANDARD: a press in the attract goes to the TITLE (not into a game); the title press -> the game.
+  nextKey(() => true).then(() => { attractOn = false; try { AUDIO.pause(); AUDIO.currentTime = 0; } catch {} titleScreen(); });
+}
+// THE TITLE — the boot card again, now a real front door: a press -> HOW TO -> HOW MANY? (mode select);
+// left alone for TITLE_IDLE_MS it drifts back into the attract trailer.
+const TITLE_IDLE_MS = 30000;
+function titleScreen() {
+  overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
+    <p class="dim">Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">press any key</div>`);
+  let done = false, waiter = null;
+  const idle = setTimeout(() => { if (done) return; done = true; if (waiter) waiter._cleanup(); attract(); }, TITLE_IDLE_MS);
+  nextKey(() => true, w => { waiter = w; }).then(() => { if (done) return; done = true; clearTimeout(idle); startGame(); });
 }
 
 // ======================================================================================
@@ -1734,6 +1749,7 @@ async function twoPlayer(bangkok){
   const w = scores[0] === scores[1] ? "A DRAW — nobody walks" : `${scores[0] > scores[1] ? "P1" : "P2"} TAKES IT`;
   overlay(`<h1>THE TOURNAMENT</h1><p>P1 as Bob: <b>${scores[0]}</b> gunmen &nbsp;·&nbsp; P2 as Bob: <b>${scores[1]}</b> gunmen</p>
     <h1 class="gold">${w}</h1><div class="start">press any key</div>`);
+  await sleep(900);                                   // CK BOOT STANDARD: results hold
   await nextKey(() => true); boot();
 }
 window.__two = { twoPlayer };
@@ -1866,15 +1882,20 @@ function startGamepad(){
   requestAnimationFrame(poll);
 }
 
-function boot() {
+// boot(true) = the cold boot; boot() after a run = back to the TITLE (a press there -> the mode select).
+// CK BOOT STANDARD: where audio needs no gesture (desktop/Electron, or a cab wrapper already took the press)
+// the cold boot skips the press-to-start card and runs the attract straight away.
+function boot(cold) {
   RUN = false;
   banner("", ""); prompt(""); clearZones(); setPoem(0);
   startGamepad();
+  if (!cold) return titleScreen();
+  if (window.CKBoot && CKBoot.audioFree) return attract();
   overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
     <p class="dim">Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">INSERT COIN — press any key</div>`);
   nextKey(() => true).then(() => { try{ ac().resume(); }catch(e){} attract(); });   // gesture unlocks audio (mp3 + sfx), then the trailer
 }
-boot();
+boot(true);
 </script>
 </body>
 </html>
