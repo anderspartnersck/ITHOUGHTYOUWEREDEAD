@@ -548,6 +548,9 @@ export const SPRITES = {
             "hit_center","hit_head","down","down2"],
     anim:{ draw:["draw1","draw2","draw3","draw"], down:["down","down2"], winged:["winged_hit","winged_idle"] } },
 };
-export const HAND_SPRITES = { base:"sprites/duel1/hand_", states:["idle","aim","recoil","recoil2","fan","feint","hurt"] };
+// Q680 (Joe 1113b: "replace" the painted fist, "super weird"): Bob's hand is now a flat CUTOUT (tools/cut_hand.py, the
+// house cutout-rig direction): sleeve + glove + the back of the .38, the shooter's view. ?hand=painted brings back the old set.
+export const HAND_SPRITES = { base:(typeof location !== "undefined" && /[?&]hand=painted\b/.test(location.search))
+  ? "sprites/duel1/hand_" : "sprites/duel1/cut/hand_", states:["idle","aim","recoil","recoil2","fan","feint","hurt"] };
 export const FX_SPRITES = { base:"sprites/duel1/fx_", names:["flash1","flash2","flash3","blood","dust","flashbulb"] };
 export const EYE_CLOSEUPS = { base:"sprites/duel1/eyes_", looks:["idle","HEAD","CENTER","WING","BOB","DEAD"] };
