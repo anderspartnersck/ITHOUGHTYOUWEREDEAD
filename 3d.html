@@ -1,0 +1,1993 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>I THOUGHT YOU WERE DEAD! — 3D EDITION</title>
+<script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed');</script>
+<style>
+  :root{ --gold:#d8a23a; --blood:#b5232b; --ink:#0a0b0f; --bone:#e9e4d6; --dim:#6b6f7a; --viol:#7a4cff; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; background:#000; color:var(--bone); overflow:hidden;
+    font-family:"Saira Condensed","Oswald",system-ui,sans-serif; letter-spacing:.5px; }
+  #cab{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at 50% 35%, #14161d 0%, #07080c 60%, #000 100%); }
+  #scene{ position:relative; width:min(100vw,56vh*1.6); height:min(100vh,56vw/1.6); max-width:980px; }
+  /* ?embed (panel/cab mount): the POV composition is %-positioned, so let #scene fill the
+     host rect edge-to-edge — true WIDESCREEN, no letterbox inside the cabinet monitor. */
+  html.embed #cab{ background:#000; }
+  html.embed #scene{ width:100vw; height:100vh; max-width:none; }
+  /* film grain / vignette */
+  #scene::after{ content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.7) 100%); }
+
+  /* the man across the street (POV) */
+  #man{ position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); width:34%;
+    text-align:center; transition:opacity .25s, filter .25s; }
+  #man pre{ font-family:ui-monospace,Menlo,monospace; line-height:1.05; font-size:clamp(10px,2.1vh,20px);
+    color:#ddd2ba; text-shadow:0 0 12px rgba(0,0,0,.95), 0 0 22px rgba(120,86,30,.35); white-space:pre; }
+  #man.winged pre{ color:#caa; }
+  #man.boss pre{ color:#e7c98a; text-shadow:0 0 14px rgba(216,162,58,.4), 0 0 10px rgba(0,0,0,.95); }
+  .zone{ position:absolute; left:50%; transform:translateX(-50%); width:74%; border:2px solid transparent;
+    border-radius:6px; pointer-events:none; transition:.12s; font-size:clamp(9px,1.5vh,13px);
+    color:var(--dim); text-align:right; padding-right:6px; }
+  /* TARGET SIZES (0928): the head is SMALL (the gamble), center mass BIG (the sure thing), the wing between.
+     A shot outside every zone is WIDE — a miss. */
+  #zHEAD{ top:4%; height:16%; width:30%; } #zCENTER{ top:23%; height:40%; width:60%; } #zWING{ top:65%; height:27%; width:74%; }
+  /* zones are FITTED to the drawn figure (fitZones); labels only show when the zone is live */
+  .zone{ color:transparent; } .zone.aim, .zone.sel, .zone.read, .zone.guard, .zone.shoulder, .zone.open{ color:inherit; }
+  .zone.aim{ color:#caa15e; } .zone.sel{ color:var(--gold); } .zone.read{ color:#e88; } .zone.guard{ color:#c77; }
+  /* the SHOULDER: late, but it never lies — his gun arm swings to where he'll really shoot */
+  .zone.shoulder{ border-left:5px solid #f0d49a; box-shadow:-10px 0 18px -6px rgba(240,212,154,.55); color:#f0d49a; }
+  .zone.sel{ border-color:var(--gold); color:var(--gold); box-shadow:0 0 18px rgba(216,162,58,.35) inset; }
+  .zone.read{ border-color:var(--blood); color:#e88; box-shadow:0 0 18px rgba(181,35,43,.4) inset; }
+
+  /* your hand / barrel low in frame */
+  #hand{ position:absolute; left:50%; bottom:-2%; transform:translateX(-50%);
+    font-family:ui-monospace,monospace; color:#3a3d46; font-size:clamp(12px,2.4vh,22px); }
+
+  /* HUD */
+  #hud{ position:absolute; top:2.5%; left:3%; right:3%; z-index:6; display:flex; justify-content:space-between;
+    font-size:clamp(10px,1.7vh,15px); color:var(--dim); text-transform:uppercase; }
+  #hud b{ color:var(--bone); font-weight:700; }
+  #poem{ position:absolute; top:7%; left:50%; z-index:6; transform:translateX(-50%); color:var(--gold);
+    font-size:clamp(10px,1.7vh,15px); letter-spacing:2px; }
+
+  /* big centered prompt / banners */
+  #banner{ position:absolute; left:0; right:0; top:14%; text-align:center; pointer-events:none; }
+  #big{ font-weight:900; font-style:italic; font-size:clamp(20px,5.2vh,46px); letter-spacing:1px;
+    text-shadow:0 2px 0 #000, 0 0 24px rgba(0,0,0,.8); }
+  #sub{ margin-top:.3em; color:var(--dim); font-size:clamp(11px,2vh,18px); }
+  .flash{ animation:flash .5s ease; }
+  @keyframes flash{ 0%{ filter:brightness(3); } 100%{ filter:none; } }
+
+  /* bottom prompt bar */
+  #prompt{ position:absolute; left:50%; transform:translateX(-50%); bottom:5%; text-align:center; z-index:6;
+    background:rgba(3,4,7,.72); border-radius:6px; padding:.15em .8em; white-space:nowrap; max-width:96%;
+    font-size:clamp(12px,2.3vh,20px); color:var(--bone); min-height:2em; }
+  #prompt .k{ display:inline-block; border:1px solid var(--dim); border-radius:4px; padding:0 .4em;
+    margin:0 .15em; color:var(--gold); font-size:.85em; }
+  #prompt small{ color:var(--dim); }
+
+  /* overlay screens (cold open, story, ending, board) */
+  #overlay{ position:absolute; inset:0; background:rgba(3,4,7,.92); display:none; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:6% 8%; gap:.5em; }
+  #overlay.show{ display:flex; }
+  #pausemenu{ position:fixed; inset:0; z-index:9999; background:rgba(3,4,7,.97); display:none; flex-direction:column; align-items:center; justify-content:center; gap:1.2vh; text-align:center; padding:4vh 6vw; }
+  #pausemenu.show{ display:flex; }
+  #pausemenu h1{ font-size:clamp(22px,6vh,54px); font-weight:900; font-style:italic; color:var(--bone); margin-bottom:2vh; }
+  #pausemenu p{ font-size:clamp(14px,2.4vh,22px); max-width:820px; }
+  #pausemenu .pi{ cursor:pointer; font-weight:800; letter-spacing:2px; color:var(--dim); font-size:clamp(18px,3.4vh,30px); }
+  #pausemenu .pi.sel{ color:var(--gold); }
+  #pausemenu .k{ border:1px solid var(--gold); color:var(--gold); padding:0 .4em; border-radius:3px; }
+  #pausemenu .gold{ color:var(--gold); } #pausemenu .dim{ color:var(--dim); }
+  #pausemenu .start{ margin-top:2vh; color:var(--gold); letter-spacing:3px; }
+  #overlay h1{ font-size:clamp(22px,6vh,54px); font-weight:900; font-style:italic; color:var(--bone);
+    letter-spacing:1px; }
+  #overlay .credit{ color:var(--gold); letter-spacing:3px; font-size:clamp(11px,2vh,16px); }
+  #overlay p{ color:#b9bcc6; font-size:clamp(12px,2.2vh,18px); max-width:36em; line-height:1.5; }
+  #overlay .start{ margin-top:1em; color:var(--gold); animation:blink 1.1s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:.25; } }
+  #board{ font-family:ui-monospace,monospace; color:#cdd; font-size:clamp(11px,2vh,16px); line-height:1.6; }
+  #board .you{ color:var(--gold); }
+  .lethal{ color:var(--blood); } .gold{ color:var(--gold); } .dim{ color:var(--dim); }
+  .warm{ color:#e8c98a; } .blood{ color:var(--blood); }
+  /* attract: each scene's content rises/fades in fresh on change */
+  #overlay.attract > *{ animation: rise 1.1s ease both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  #overlay.attract{ background:#05060b; }
+  /* the drop-off montage: hard fast cuts */
+  #overlay.cut{ background:#000; }
+  #overlay.cut > *{ animation: killcut .12s steps(2) both; }
+  @keyframes killcut{ from{ opacity:0; filter:brightness(4); } to{ opacity:1; filter:none; } }
+  .kill{ font-weight:900; font-style:italic; font-size:clamp(28px,9vh,80px); color:var(--blood);
+    text-shadow:0 0 30px rgba(181,35,43,.5); letter-spacing:1px; }
+  .killsub{ color:#6a6a72; letter-spacing:3px; margin-top:.4em; }
+  /* THE BUTTON FLIPS — the "DID YOU SEE THAT?" you pressed all game, now mashed by the crowd at Bob */
+  #flipbtn{ display:inline-block; font-family:ui-monospace,Menlo,monospace; color:var(--gold);
+    font-size:clamp(12px,2.5vh,20px); line-height:1.15; white-space:pre; text-shadow:0 0 14px rgba(216,162,58,.4); }
+  #flipbtn.mash{ animation:mash .14s ease; color:var(--blood); text-shadow:0 0 20px var(--blood); }
+  @keyframes mash{ 0%{ filter:brightness(4); transform:scale(1.07) translateY(3px); } 100%{ filter:none; transform:none; } }
+  #flipcount{ margin-top:.6em; font-weight:900; font-style:italic; letter-spacing:2px; min-height:1.4em; }
+  #overlay.roulette{ background:#0c0709; }
+  .roul{ font-family:ui-monospace,monospace; color:#cdd; font-size:clamp(13px,2.4vh,20px); line-height:1.25; white-space:pre; }
+  .endtitle{ font-size:clamp(26px,8vh,72px); font-weight:900; font-style:italic; color:var(--bone);
+    text-shadow:0 0 40px rgba(0,0,0,.9); letter-spacing:1px; }
+  #overlay.flashwhite{ animation: whiteflash .5s ease; }
+  @keyframes whiteflash{ 0%{ background:#fff; } 100%{ } }
+  /* duel FX (Phase 0 ASCII pass) — recoil shake, muzzle-lit gun-hand, the foe drops */
+  #man.shake{ animation:shk .2s steps(2) 1; }
+  @keyframes shk{ 0%,100%{ transform:translate(-50%,-50%); } 30%{ transform:translate(-53%,-47%); } 70%{ transform:translate(-47%,-53%); } }
+  #hand.fire{ color:#ffd24a; text-shadow:0 0 16px #ffae3a, 0 0 34px var(--blood); }
+  #man.down pre{ color:var(--blood); }
+  #man.down{ animation:drop .45s ease both; }
+  @keyframes drop{ from{ transform:translate(-50%,-50%); opacity:1; } to{ transform:translate(-50%,-40%) rotate(3deg); opacity:.82; } }
+  /* WINGED (wound): a blood-red flash + recoil — settles to the dim wounded tint, never the drop */
+  #man.wound pre{ color:var(--blood); }
+  #man.wound{ animation:wound .55s ease both; }
+  @keyframes wound{ 0%{ filter:brightness(2.4) saturate(1.5); transform:translate(-50%,-50%); }
+    22%{ transform:translate(-46%,-49%) rotate(2.5deg); } 100%{ filter:none; transform:translate(-50%,-50%); } }
+
+  /* ===== ASCII / SPRITE COMBO — the painted MEAN STREETS world behind the ASCII duel.
+     The sepia duel illustration sits dimmed as the world (RenCen skyline glowing center,
+     the painted duelists as faint ghosts at the edges); the ASCII foe + gun-hand + crowd
+     play live on top; painted stills hard-CUT in on the big beats. "kiss of ASCII." ===== */
+  #world{ position:absolute; inset:0; z-index:0; overflow:hidden; }
+  /* dimmed + blurred HARD so the painted duelists melt into sepia atmosphere — only the
+     RenCen skyline glows; the lone ASCII foe reads as the man across the street. */
+  #world .bg{ position:absolute; inset:-8%;
+    background:url('sprites/cabinet/duel.png') center 34%/cover no-repeat;
+    filter:brightness(.2) blur(3px) saturate(.6) contrast(1.1) sepia(.4); transform:scale(1.15); }
+  /* the painted-in-code street plate (plate.mjs) — replaces the blurred duel.png when on */
+  #plate{ position:absolute; inset:0; width:100%; height:100%; display:none; filter:brightness(.82) saturate(.95); }
+  #world.plated #plate{ display:block; } #world.plated .bg{ display:none; }
+  /* Joe's painted street (PLATE 1) over the code plate on stage 1 */
+  #platePaint{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 60%; display:none; filter:brightness(.82) saturate(.95); }
+  #world.painted1 #platePaint{ display:block; }
+  #world .grade{ position:absolute; inset:0; background:
+    radial-gradient(120% 90% at 50% 40%, transparent 30%, rgba(5,5,8,.55) 72%, rgba(4,4,6,.9) 100%),
+    linear-gradient(180deg, rgba(6,6,9,.6) 0%, rgba(6,6,9,.08) 26%, rgba(6,6,9,.12) 52%, rgba(4,4,6,.9) 100%); }
+  /* ASCII crowd — distant spectators framing the street; twinkles, flares gold on a kill */
+  #crowd{ position:absolute; left:0; right:0; bottom:7.5%; z-index:1; text-align:center; white-space:nowrap;
+    overflow:hidden; font-family:ui-monospace,Menlo,monospace; font-size:clamp(9px,2.1vh,18px); letter-spacing:1px;
+    color:#181109; pointer-events:none; opacity:.92; text-shadow:0 1px 1px rgba(0,0,0,.5); }
+  #crowd span{ display:inline-block; transition:color .25s ease, transform .2s ease; }
+  #crowd span.lit{ color:#3a2c18; }
+  #crowd.flare span{ color:#caa15e; transform:translateY(-2px); }
+  /* painted sprite STINGER — a full-scene cut on the big beats (duel establish / KILL / President) */
+  #sting{ position:absolute; inset:0; z-index:8; width:100%; height:100%; object-fit:cover;
+    opacity:0; pointer-events:none; }
+  #sting.cut{ animation:stingcut .9s ease forwards; }
+  @keyframes stingcut{ 0%{ opacity:0; filter:brightness(3.2) contrast(1.1); }
+    11%{ opacity:1; filter:brightness(1.05); } 70%{ opacity:1; } 100%{ opacity:0; } }
+  /* BONUS coin-rain — "the crowd throws coins": ASCII tokens tumble over the bonus screen */
+  #coinrain{ position:absolute; inset:0; z-index:9; pointer-events:none; overflow:hidden; }
+  #coinrain .coin{ position:absolute; top:-12%; font-family:ui-monospace,Menlo,monospace; font-weight:700;
+    color:var(--gold); text-shadow:0 0 8px rgba(216,162,58,.6), 0 1px 1px rgba(0,0,0,.7); will-change:transform;
+    animation:coinfall linear forwards; }
+  @keyframes coinfall{ 0%{ transform:translateY(-14vh) rotate(0deg); opacity:0; }
+    9%{ opacity:1; } 88%{ opacity:1; } 100%{ transform:translateY(116vh) rotate(560deg); opacity:.15; } }
+
+  /* ===== LIGHT-PISTOL AIM — Bob's a natural. A crosshair you sweep + squeeze; pointing at
+     HEAD courts the headshot (the legend), CENTER is the honest kill, WING just wounds. ===== */
+  #aim{ position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:6; pointer-events:none;
+    border:2px solid rgba(216,162,58,.85); border-radius:50%; opacity:0; transition:opacity .15s, filter .12s;
+    box-shadow:0 0 10px rgba(216,162,58,.5), inset 0 0 6px rgba(216,162,58,.35); }
+  #aim.on{ opacity:.95; }
+  #aim.hot{ filter:brightness(1.45) drop-shadow(0 0 6px var(--gold)); }
+  #aim::before,#aim::after{ content:""; position:absolute; background:var(--gold); box-shadow:0 0 5px var(--gold); }
+  #aim::before{ left:50%; top:-7px; bottom:-7px; width:2px; margin-left:-1px; }
+  #aim::after{ top:50%; left:-7px; right:-7px; height:2px; margin-top:-1px; }
+  .zone.aim{ border-color:rgba(216,162,58,.55); color:#caa15e; box-shadow:0 0 14px rgba(216,162,58,.18) inset; }
+  /* the head-zone glows hotter when the crosshair's on it — the headshot is the call */
+  #zHEAD.aim{ border-color:rgba(216,162,58,.9); box-shadow:0 0 22px rgba(216,162,58,.4) inset; }
+
+  /* DEAD-EYE — the headshot pops. Bob can't help it. */
+  #deadeye{ position:absolute; left:50%; top:30%; transform:translate(-50%,-50%); z-index:7; text-align:center;
+    pointer-events:none; opacity:0; }
+  #deadeye .dl{ font-weight:900; font-style:italic; letter-spacing:3px; color:var(--gold);
+    font-size:clamp(20px,5vh,44px); text-shadow:0 0 22px var(--gold), 0 2px 0 #000; }
+  #deadeye .ds{ color:#e8c98a; letter-spacing:4px; font-size:clamp(11px,2.2vh,17px); margin-top:.15em; }
+  #deadeye.pop{ animation:deye 1.05s ease both; }
+  @keyframes deye{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(-7deg); }
+    16%{ opacity:1; transform:translate(-50%,-50%) scale(1.16); }
+    30%{ transform:translate(-50%,-50%) scale(1); } 72%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1.02); } }
+  #prompt .k{ cursor:pointer; user-select:none; }
+
+  /* ===== THE BODY IS THE INTERFACE (0928) ===== */
+  /* his GUARD drifts to your habit — the CPU guards your most-used lane; now you can SEE it */
+  .zone.guard{ border:2px dashed rgba(181,35,43,.55); color:#c77; }
+  /* the body: a false twitch during "steady…" (a feint — don't bite) */
+  #man.twitch{ animation:twitch .22s steps(2) 1; }
+  @keyframes twitch{ 0%,100%{ transform:translate(-50%,-50%); } 50%{ transform:translate(-48.5%,-50.6%) rotate(-1.2deg); } }
+  /* the stare — he looks straight at Bob */
+  #man.stare pre{ color:#f0e6cc; text-shadow:0 0 16px rgba(255,255,255,.25), 0 0 10px rgba(0,0,0,.95); }
+  /* the pair (THE SEVEN-JOHNS) — two men side by side */
+  #man.pair{ width:62%; }
+  /* THE PRESIDENT — the other man in frame (a target you can choose) */
+  #pres{ position:absolute; left:80%; top:44%; transform:translate(-50%,-50%); z-index:2; display:none;
+    font-family:ui-monospace,Menlo,monospace; white-space:pre; line-height:1.05; font-size:clamp(9px,1.8vh,17px);
+    color:#9fb3d9; text-shadow:0 0 12px rgba(0,0,0,.95); cursor:crosshair; }
+  #pres.on{ display:block; } #pres.aim{ color:#e7c98a; text-shadow:0 0 16px rgba(216,162,58,.5); }
+  #pres.down{ color:var(--blood); transform:translate(-50%,-44%) rotate(4deg); opacity:.8; }
+  /* the draw clock — quick-draw sport shows the times */
+  #clock{ position:absolute; left:0; right:0; bottom:13%; text-align:center; font-family:ui-monospace,Menlo,monospace;
+    font-size:clamp(11px,2vh,17px); color:#b9bcc6; letter-spacing:1px; pointer-events:none; min-height:1.3em; }
+  #clock b{ color:var(--gold); } #clock .late{ color:var(--blood); }
+  /* WHOA! — time nearly stops; the button lights */
+  #scene.slowmo #world .bg{ filter:brightness(.12) blur(4px) saturate(.3) sepia(.6); }
+  #scene.slowmo #man pre{ filter:contrast(1.3); }
+  #whoabtn{ display:inline-block; font-weight:900; font-style:italic; color:#000; background:var(--gold);
+    padding:0 .5em; border-radius:4px; box-shadow:0 0 22px var(--gold); animation:blink .2s steps(1) infinite; }
+  /* HEY BOB, SMILE! — the flash, and the afterimage you have to read through */
+  #whiteout{ position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0; background:#fff; }
+  #whiteout.pop{ animation:whiteout 2.4s ease-out forwards; }
+  @keyframes whiteout{ 0%{ opacity:1; } 18%{ opacity:.96; } 55%{ opacity:.55; } 100%{ opacity:.18; } }
+  #man.burn pre{ color:#3a2a1a; text-shadow:0 0 30px #fff, 0 0 60px #ffe9b0; filter:blur(1.2px); }
+  /* Bob's own wound — the hand shakes and bleeds */
+  #hand.hurt{ color:#6a2226; animation:shaky .35s steps(2) infinite; }
+  @keyframes shaky{ 0%,100%{ transform:translateX(-50%); } 50%{ transform:translateX(-49%) translateY(1px); } }
+  /* LIFE — two pips each. You can't take more than two: a wing takes one, a head or chest takes both. */
+  .pips{ letter-spacing:2px; color:var(--gold); } .pips .gone{ color:#3a2020; } .pips.hurt{ color:var(--blood); }
+  /* THE GUN-BARREL IRIS — the Bond barrel / the killer-mask POV: it tightens on "steady…" and snaps open on DRAW! */
+  @property --iris { syntax:'<percentage>'; inherits:false; initial-value:75%; }
+  #iris{ position:absolute; inset:0; z-index:4; pointer-events:none; --iris:75%; opacity:0;
+    transition: --iris .55s cubic-bezier(.2,.8,.2,1), opacity .35s;
+    background: radial-gradient(circle at 50% 44%, transparent var(--iris), rgba(0,0,0,.94) calc(var(--iris) + 3%)),
+      repeating-conic-gradient(from 0deg at 50% 44%, rgba(255,240,210,.045) 0deg 5deg, transparent 5deg 15deg); }
+  #iris.tight{ --iris:30%; opacity:1; } #iris.open{ --iris:78%; opacity:.85; transition-duration:.12s; }
+  /* CRITICAL — you've been shot once. One more and you're done: the edges throb red, the frame won't sit still,
+     and your hand (the sway) never settles. Presentation of the engine's one wound bit. */
+  #crit{ position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0;
+    background:radial-gradient(ellipse at 50% 45%, transparent 48%, rgba(150,10,18,.55) 82%, rgba(90,0,8,.85) 100%); }
+  #scene.critical #crit{ animation:throb 1.05s ease-in-out infinite; }
+  @keyframes throb{ 0%,100%{ opacity:.35; } 12%{ opacity:.95; } 24%{ opacity:.5; } 36%{ opacity:.85; } }
+  #scene.critical{ animation:critshake 2.6s steps(12) infinite; }
+  @keyframes critshake{ 0%,100%{ transform:none; } 20%{ transform:translate(1px,-1px); } 40%{ transform:translate(-1px,1px); }
+    60%{ transform:translate(1px,1px); } 80%{ transform:translate(-1px,0); } }
+  #hBob.hurt::after{ content:" CRITICAL"; color:var(--blood); animation:blink .5s steps(1) infinite; }
+  /* the OPEN LOW warning after a feint nobody bought */
+  .zone.open{ border:2px solid var(--blood); color:var(--blood); animation:blink .3s steps(1) infinite; }
+  /* PAINTED SPRITES (0928) — the man, Bob's hand, effects, and the Leone eye close-up */
+  /* one shared scale for every frame (a man lying down is short and wide), feet on a common baseline */
+  #man.sprite{ top:55%; height:33vh; max-height:330px; display:flex; align-items:flex-end; justify-content:center; }
+  #manImg{ display:none; margin:0 auto; image-rendering:auto;
+    filter:drop-shadow(0 0 14px rgba(0,0,0,.85)); }
+  #man.sprite #manImg{ display:block; } #man.sprite pre{ display:none; }
+  .eyeDot{ position:absolute; z-index:2; border-radius:50%; background:#efe3c6; box-shadow:0 0 0 1px #2a1d10 inset;
+    pointer-events:none; overflow:hidden; }
+  .eyeDot i{ position:absolute; width:46%; height:78%; left:27%; top:11%; border-radius:50%; background:#1a120a; transition:top .08s, left .08s; }
+  .eyeDot.HEAD i{ top:-12%; } .eyeDot.WING i{ top:36%; } .eyeDot.BOB i{ width:62%; height:92%; left:19%; top:4%; }
+  .eyeDot.DEAD{ background:#c9b99a; } .eyeDot.DEAD i{ display:none; }
+  /* Bob's gun hand — always on screen, lower right like a first-person gun; sized to the SCENE, not the window */
+  #handImg{ position:absolute; left:78%; bottom:0; transform:translateX(-50%); height:44%; max-height:none; z-index:5;
+    display:none; pointer-events:none; filter:drop-shadow(0 -4px 12px rgba(0,0,0,.8)); }
+  #scene.painted #handImg{ display:block; } #scene.painted #hand{ display:none; }
+  #scene:has(#overlay.show) #handImg{ display:none; }             /* not over the cutscenes */
+  .fxImg{ position:absolute; z-index:6; pointer-events:none; transform:translate(-50%,-50%); animation:fxpop .45s ease-out forwards; }
+  @keyframes fxpop{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6); } 25%{ opacity:1; transform:translate(-50%,-50%) scale(1.05); }
+    100%{ opacity:0; transform:translate(-50%,-50%) scale(1.15); } }
+  /* the Leone insert: an extreme close-up of HIS eyes while you read him (the painted pupils are too small at play size) */
+  #eyeInsert{ position:absolute; left:3%; top:20%; width:27%; z-index:6; display:none;
+    border-top:3px solid #000; border-bottom:3px solid #000; background:#0b0806; box-shadow:0 0 30px rgba(0,0,0,.9); }
+  #eyeInsert.on{ display:block; animation: rise .18s ease both; } #eyeInsert img{ display:block; width:100%; }
+  /* painted cutscene stills (sprites/attract/) — a film frame inside the overlay; ASCII is the fallback */
+  /* layered cutscene shots (rig SCENES `stage`) — same frame as a still, 16:9 */
+  #overlay .stage{ position:relative; width:min(94%, calc(58vh * 16 / 9)); aspect-ratio:16/9; overflow:hidden;
+    border:1px solid rgba(216,162,58,.25); }
+  #overlay .stage .plate{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; animation:push 6s ease-out both; }
+  #overlay .stage .lay{ position:absolute; transform:translateX(-50%); filter:drop-shadow(0 6px 10px rgba(0,0,0,.55)); }
+  #overlay .stage .lay.arc{ animation:arc 1.1s cubic-bezier(.3,.1,.5,1) both; }
+  #overlay .stage .lay.drop{ animation:drop .5s cubic-bezier(.5,0,.8,.4) both; }
+  #overlay .stage .plate.dim{ filter:brightness(.45) blur(2px); }        /* a room behind a cutout */
+  @keyframes push{ from{ transform:scale(1); } to{ transform:scale(1.06); } }
+  @keyframes arc{ 0%{ transform:translate(150%,-120%) rotate(-40deg) scale(.5); } 60%{ transform:translate(20%,-70%) rotate(160deg) scale(.85); }
+    100%{ transform:translate(-50%,0) rotate(340deg) scale(1); } }
+  @keyframes drop{ 0%{ transform:translate(-50%,-300%) rotate(-30deg); } 75%{ transform:translate(-50%,0) rotate(8deg); } 88%{ transform:translate(-50%,-18%) rotate(4deg); }
+    100%{ transform:translate(-50%,0) rotate(0); } }
+  /* a hard flash over a beat — BANG (white), the foreshadowing (purple) */
+  #overlay .flash{ position:absolute; inset:0; z-index:9; pointer-events:none; animation:flashout .5s ease-out both; }
+  #overlay .flash.white{ background:#fff; } #overlay .flash.purple{ background:#7a2fd0; mix-blend-mode:screen; animation:flashpurple .65s steps(3) both; }
+  @keyframes flashout{ from{ opacity:1; } to{ opacity:0; } }
+  @keyframes flashpurple{ 0%{ opacity:.9; } 33%{ opacity:.2; } 66%{ opacity:.7; } 100%{ opacity:.35; } }
+  #overlay img.still{ max-width:94%; max-height:58vh; object-fit:contain; border:1px solid rgba(216,162,58,.25);
+    box-shadow:0 0 40px rgba(0,0,0,.8); animation: rise .9s ease both; }
+  #overlay pre.scene{ font-family:ui-monospace,Menlo,monospace; color:#cdd; font-size:clamp(9px,1.9vh,17px); line-height:1.15; white-space:pre; text-align:left; margin:.2em auto; }
+  /* 2P — the gunman's player looks AT Bob (right panel); both players' picks are hidden keypresses */
+  #p2view{ position:absolute; right:1.5%; top:12%; width:27%; z-index:3; display:none; text-align:center;
+    border:1px solid rgba(122,76,255,.45); background:rgba(8,6,16,.72); border-radius:6px; padding:.4em .3em; }
+  #p2view.on{ display:block; }
+  #p2view .who{ color:#b9a6ff; font-size:clamp(10px,1.7vh,14px); letter-spacing:1px; }
+  #p2view pre{ font-family:ui-monospace,Menlo,monospace; color:#ddd2ba; font-size:clamp(8px,1.5vh,13px); line-height:1.05; white-space:pre; text-align:left; display:inline-block; }
+  #p2view .cue{ color:#f0d49a; min-height:1.2em; font-size:clamp(10px,1.6vh,13px); }
+  .locked{ color:#8f8; letter-spacing:1px; }
+  /* the roulette cylinder */
+  .cyl{ font-family:ui-monospace,Menlo,monospace; font-size:clamp(18px,4vh,34px); letter-spacing:.3em; white-space:pre; }
+  .cyl .live{ color:var(--blood); text-shadow:0 0 12px var(--blood); } .cyl .empty{ color:#556; }
+  .cyl .fired{ color:#888; text-decoration:line-through; }
+
+  /* ===== BLENDER 3d/ (3D PIPELINE/games/itywd) ===== */
+  #crowd3d{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 60%; display:none; pointer-events:none; }
+  #world.painted1 #crowd3d.on{ display:block; } html.lab3d #crowd{ display:none; }
+  #overlay .stage img.seqimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; animation:none; }
+  #overlay.attract.plated{ background-size:cover; background-position:50% 50%; }
+  #overlay.attract.plated > h1, #overlay.attract.plated > p, #overlay.attract.plated > .credit, #overlay.attract.plated > .dim{ text-shadow:0 2px 0 #000, 0 0 18px #000, 0 0 30px #000; }
+  /* EXPOSURE (Joe 1026 "the scanline shots ... are all very underexposed"): the plates are no longer pre-dimmed (post.py),
+     the words get their legibility from a dark band behind the text + the text shadow, not from blacking out the picture */
+  #overlay.menu{ background:linear-gradient(rgba(3,4,7,.22), rgba(3,4,7,.42)), url("3d/web/menu/menu_title.webp") 50% 55%/cover; }
+  #overlay.menu.howto{ background:linear-gradient(rgba(3,4,7,.38), rgba(3,4,7,.55)), url("3d/web/menu/menu_howto.webp") 50% 55%/cover; }
+  /* THE CRT: scanlines only (the game's own #scene::after already vignettes - the old second vignette here doubled it).
+     The dark line costs .28/3 of the light, so the layer GIVES IT BACK underneath: backdrop-filter brightness(--cg)
+     (set with the grade, 1/(1-.28/3) at full CRT) - the lines read as texture, not as an exposure drop. */
+  #crt{ position:absolute; inset:0; z-index:20; pointer-events:none; display:none;
+    backdrop-filter:brightness(var(--cg,1)); -webkit-backdrop-filter:brightness(var(--cg,1)); animation:crtflick 4s steps(40) infinite; }
+  #crt::before{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
+  #crt::after{ content:""; position:absolute; left:0; right:0; height:7%; top:-10%; background:linear-gradient(transparent, rgba(255,255,255,.06), transparent);
+    animation:crtroll 7s linear infinite; mix-blend-mode:screen; }
+  html.crt #crt{ display:block; }
+  @keyframes crtflick{ 0%,100%{ opacity:.96; } 50%{ opacity:1; } 52%{ opacity:.92; } }
+  @keyframes crtroll{ from{ top:-10%; } to{ top:110%; } }
+  #overlay.live{ background:#05060b; }
+  #overlay .atbg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;
+    filter:brightness(.9) contrast(var(--gc,1)) saturate(var(--gs,1)); animation:none !important; }
+  /* the words' own shade: a soft dark band through the middle of the frame, under the text only (the picture keeps its exposure) */
+  #overlay.live::after{ content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse 62% 34% at 50% 50%, rgba(3,4,7,.62), rgba(3,4,7,.28) 60%, transparent 100%); }
+  #overlay.live > *:not(.atbg):not(.flash){ position:relative; z-index:1; text-shadow:0 2px 0 #000, 0 0 18px #000, 0 0 30px #000; }
+  html.lab3d #platePaint, html.lab3d #crowd3d, #overlay .stage img.seqimg{ filter:contrast(var(--gc,1)) saturate(var(--gs,1)); }
+  html.crt #crt{ opacity:var(--crt,1); }
+  #artBadge{ position:fixed; left:8px; top:8px; z-index:99; font:600 11px/1.6 ui-monospace,Menlo,monospace; letter-spacing:1px;
+    padding:2px 8px; border-radius:4px; background:rgba(0,0,0,.6); color:#e8c23a; border:1px solid rgba(232,194,58,.5); pointer-events:none; }
+  #artBadge.orig{ color:#9fb4c8; border-color:rgba(159,180,200,.5); }
+</style>
+</head>
+<body>
+<div id="artBadge"></div><div id="cab"><div id="scene">
+  <div id="world"><canvas id="plate"></canvas><img id="platePaint" alt="" src="sprites/plates/plate1.jpg" onerror="this.remove()"><div class="bg"></div><img id="crowd3d" alt=""><div class="grade"></div></div>
+  <div id="crowd"></div><div id="crt"></div>
+  <div id="hud"><div>BOB <b id="hBob" class="pips">▮▮</b></div><div>DISHONOR <b id="hRec">0</b></div><div>LEGEND <b id="hLeg">0</b></div><div>SCORE <b id="hScore">0</b></div><div>HIM <b id="hHim" class="pips">▮▮</b></div></div>
+  <div id="poem">— · — · —</div>
+
+  <div id="man"><img id="manImg" alt=""><pre id="manArt"></pre><div class="eyeDot" id="eyeL"><i></i></div><div class="eyeDot" id="eyeR"><i></i></div>
+    <div class="zone" id="zHEAD">HEAD ↑</div>
+    <div class="zone" id="zCENTER">CENTER MASS</div>
+    <div class="zone" id="zWING">GUT ↓</div>
+  </div>
+  <div id="pres"></div>
+  <div id="hand">════╝</div>
+  <img id="handImg" alt="" src="sprites/duel1/hand_idle.png">
+  <div id="eyeInsert"><img id="eyeInsertImg" alt=""></div>
+  <div id="clock"></div>
+  <div id="whiteout"></div>
+  <div id="iris"></div>
+  <div id="crit"></div>
+  <div id="p2view"><div class="who" id="p2who">P2</div><pre id="p2art"></pre><div class="cue" id="p2cue"></div></div>
+  <div id="aim"></div>
+  <div id="deadeye"><div class="dl"></div><div class="ds"></div></div>
+
+  <div id="banner"><div id="big"></div><div id="sub"></div></div>
+  <div id="prompt"></div>
+
+  <img id="sting" alt="">
+  <div id="coinrain"></div>
+  <div id="overlay"></div>
+</div></div>
+
+<script src="lib/ghost.js?v=1"></script>
+<script type="module">
+import { Engine, Side, AIController, BOB, GUN, BAT, MARSHAL, BATTER, LANES, STANCES,
+  HEAD, CENTER, WING, STRONG, OFF, GRAZE, KILL, WINGED, MISFIRE,
+  resolveStrike, resolveWhoa, label, STAGES, DECISIONS_PER_STAGE, SONNET_LENGTH,
+  WINGED_SLOW, LEGEND_LOUD, CHAMBERS, bulletsFor, beatOpponent,
+  PRESIDENT, PRESIDENTS_MAN, PHOTOGRAPHER, FEINT_COST, QUICK_HAND_S, SELL_IT_SECOND,
+  PERKS, PERK_PAIRS, stageStart } from "./engine.mjs";
+import { drawPlate } from "./plate.mjs";
+import { NEXT_SEVEN, NEXT_BY_NAME } from "./foes.mjs";
+import { TIMING, EYE_WORD as RIG_EYE_WORD, frame, HAND as HANDS, PRESIDENT_ART, SCENES as RIG_SCENES, bobFrame,
+  SPRITES, HAND_SPRITES, FX_SPRITES, EYE_CLOSEUPS, whoName, whoLine } from "./rig.mjs";
+import { tournament as _tourSim, BOUT_EXCHANGES, BOB_TELL_2P, GUNMAN_PERK_PAIRS, LINEUP, PAIR_SLOT, SEVEN_JOHN, SEVEN_JOHN_2,
+  BANGKOK_SHOTS } from "./engine.mjs";
+import { SCORE_DUEL, SCORE_ON_RECORD, SCORE_REACH_TABLE, SCORE_THE_MAN, SCORE_THE_CHAMBER, BONUS_BASE,
+  SCORE_PRESIDENT, beatScore, DISHONOR_SHAMED, SCORE_THE_MAN_ALONE } from "./game.mjs";
+
+const $ = id => document.getElementById(id);
+// ===== BLENDER LAB: swap ONLY the first duel's art (engine, rig, TIMING untouched) =====
+const LAB = "3d/", LQ = new URLSearchParams(location.search);
+const ART_NEW = LQ.get("art") !== "orig";            // ?art=orig = the game's own art, same page, same engine
+{ const b = document.getElementById("artBadge"); b.textContent = ART_NEW ? "ART: BLENDER  ·  T = original" : "ART: ORIGINAL  ·  T = Blender"; b.classList.toggle("orig", !ART_NEW); }
+window.addEventListener("keydown", e => { if (e.code !== "KeyT") return; e.stopImmediatePropagation(); const q = new URLSearchParams(location.search);
+  q.set("art", ART_NEW ? "orig" : "new"); location.search = q.toString(); }, true);     // flips the art (reloads at the boot card)
+if (ART_NEW) document.documentElement.classList.add("lab3d");
+// THE GRADE, live: ?grade=0..2 (1 = as rendered) or key G cycles 0 / .5 / 1 / 1.5 / 2 - the CRT layer's strength plus a
+// contrast/saturation push on the Blender art. (The baked passes - VHS, bloom, Kuwahara - are dialled in style.json.)
+let LAB_GRADE = Math.max(0, Math.min(2, parseFloat(LQ.get("grade") ?? "1")));
+function setGrade(g){ LAB_GRADE = g; const r = document.documentElement.style;
+  r.setProperty("--crt", String(Math.min(1, g))); r.setProperty("--cg", (1 / (1 - 0.28 / 3 * Math.min(1, g))).toFixed(3)); r.setProperty("--gc", String(1 + 0.18 * (g - 1))); r.setProperty("--gs", String(1 + 0.22 * (g - 1)));
+  const b = document.getElementById("artBadge"); if (b && ART_NEW) b.textContent = `ART: BLENDER  ·  GRADE ${g}  ·  T = original  G = grade`; }
+window.addEventListener("keydown", e => { if (e.code !== "KeyG" || !ART_NEW) return; e.stopImmediatePropagation();
+  const steps = [0, 0.5, 1, 1.5, 2]; setGrade(steps[(steps.indexOf(LAB_GRADE) + 1) % steps.length] ?? 1); }, true);
+if (ART_NEW) setGrade(LAB_GRADE);
+if (ART_NEW && LQ.get("crt") !== "0") document.documentElement.classList.add("crt");
+if (ART_NEW && LQ.get("plate") !== "paint") $("platePaint").src = LAB + "web/plates/plate1.webp";
+// THE PRELOAD: everything the cold open + duel 1 will draw (renders/web/preload.json), a few at a time, in order
+if (ART_NEW) fetch(LAB + "web/preload.json").then(r => r.json()).then(list => { let i = 0; const keep = [];
+  const next = () => { if (i >= list.length) return; const im = new Image(); keep.push(im); im.onload = im.onerror = next; im.src = LAB + list[i++]; };
+  for (let k = 0; k < 4; k++) next(); window.__labPreload = keep; }).catch(() => {});
+// HYBRID (Joe 1024): Hunter 1 is Joe's painted frames (the game's own duel1c, cut from refs 8-21) - untouched by default.
+// ?cop=guide shows the Blender GUIDE renders instead (with the in-betweens Joe has not painted: idleB, block, miss, shoulder_*).
+{ const sp = SPRITES["HUNTER 1"];
+  if (ART_NEW && LQ.get("cop") === "guide"){ sp.base = LAB + "guides/duel1c/cop_"; sp.suffix = "_GUIDE"; sp.meta = LAB + "guides/duel1c/cop_GUIDE.json";
+    for (const s of ["idleB","block","miss","shoulder_HEAD","shoulder_CENTER","shoulder_WING"]) if (!sp.states.includes(s)) sp.states.push(s); } }
+const LAB_HSCALE3D = LQ.get("hscale") === "3d";    // the painted frames at the TRUE pose heights measured off the 3D guide
+if (ART_NEW && LQ.get("hand") === "3d"){ HAND_SPRITES.base = LAB + "guides/hand/hand_"; HAND_SPRITES.suffix = "_GUIDE"; }   // the 3D hand is a GUIDE
+// ?hand=fps (Joe 1026: "you should be able to do FPS gfx look"): Bob's view-model from games/itywd/fps/bob_fps.py — the
+// rigged hand + the red room's revolver, rendered as FULL 1280x720 frames (the arm comes in from off-frame), so the
+// hand layer covers the whole scene instead of the painted sprite's corner box
+if (ART_NEW && LQ.get("hand") === "fps"){ HAND_SPRITES.base = LAB + "fps/hand_"; HAND_SPRITES.suffix = "";
+  const st = document.createElement("style"); st.textContent = "#handImg{ left:0 !important; bottom:0 !important; width:100% !important; height:100% !important; transform:none !important; object-fit:cover; }";
+  document.head.appendChild(st); }
+if (ART_NEW){ EYE_CLOSEUPS.base = LAB + "web/eyes/eyes_"; EYE_CLOSEUPS.ext = ".webp"; }        // the Leone insert from Joe's eye sheet (ref 23)
+const LAB_CROWD = ART_NEW && LQ.get("crowd") !== "0";
+let _crowdBase = "watch", _crowdT = 0;
+function crowdReact(r, hold){ const c = document.getElementById("crowd3d"); if (!c || !LAB_CROWD) return;
+  c.classList.add("on"); clearTimeout(_crowdT);
+  const u = k => LAB + "web/crowd/crowd_" + k + ".webp";
+  if (!hold){ _crowdBase = r; c.src = u(r); return; }
+  c.src = u(r); _crowdT = setTimeout(() => { c.src = u(_crowdBase); }, hold); }
+window.__lab = { crowdReact };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// THE MAN IN FRAME — the opponent across the street, in real ASCII. Eyes go x x when
+// winged; the WPN token swaps gun/bat. dropFoe() fells him on the kill; muzzleFX = your gun.
+const MAN = `      .-''-.
+      | o o|
+      |  ⌄ |
+      '-,,-'
+     /|████|\\
+  WPN==|████|
+       |████|
+      _|    |_
+     (__|  |__)`;
+// THE MARSHAL — the read-wall (Hope County, retired): braced, squared, a star on the chest.
+// He guards your most-used lane, so he reads as a WALL you can't just hammer.
+const MAN_MARSHAL = `      ._==_.
+      |o o|
+      |=  =|
+     /|[★]|\\
+  ·==[=|██|=]
+      |████|
+      |_  _|
+     /__||__\\`;
+// THE BATTER — came down the interstate, barbed bat cocked low. Even a wing kills.
+const MAN_BATTER = `  ╪╪═╗  .--.
+      \\ |o o|
+        | vv|
+        |███|≡
+       /|███|
+        |███|
+       _|   |_
+      (__| |__)`;
+const FOE_DOWN = `         x   x
+          '-,-'
+    . _____)V(_____ .
+   '                 '
+  --- the street takes it ---`;
+const HAND = "════╝";
+// WINGED (wound) variants — a distinct silhouette from BOTH idle and the FOE_DOWN drop: the man
+// is still UP but hunched over the hit, weapon sagging, one arm clutching a bleeding flank (▓▒).
+// Franchise rule (kiss-of-ASCII): the wound is procedural ASCII, not a painted still.
+const WINGED_MAN = `      .-''-.
+      | x x|
+      |  ~ |
+      '-,,-'
+      \\|██▓(
+       )██▒|
+       |██▒|
+      _|   |_
+     (__) '-)`;
+const WINGED_MARSHAL = `      ._==_.
+      |x x|
+      |=  =|
+     \\|[▓]|
+   ·=[=|▒█|=)
+      |██▒|
+      |_  _|
+     /__||_\\`;
+const WINGED_BATTER = `  ╪╪═╗  .--.
+      \\ |x x|
+        | ~~|
+        |▓██(
+       \\|▒██
+        |▒██|
+       _|   |_
+      (__) '_)`;
+function figureFor(char){
+  if (char && char.name==="THE MARSHAL") return MAN_MARSHAL;
+  if (char && char.name==="THE BATTER")  return MAN_BATTER;
+  return MAN;
+}
+function wingedFigureFor(char){
+  if (char && char.name==="THE MARSHAL") return WINGED_MARSHAL;
+  if (char && char.name==="THE BATTER")  return WINGED_BATTER;
+  return WINGED_MAN;
+}
+const isBossChar = char => !!(char && (char.name==="THE MARSHAL" || char.name==="THE BATTER"));
+// THE EYES are gameplay data: an overlay on a neutral face. ˙ ˙ = looking HIGH (your head),
+// • • = level (center), . . = LOW (the wing), ◉ ◉ = staring straight at Bob. Honest only sometimes.
+// each boss reads differently — the one-line signature shown when he steps into frame
+const BOSS_TELL = { "THE MARSHAL":"he's been studying you — watch his guard", "THE BATTER":"the barbs — even a wing kills" };
+const mostCommon = arr => { if(!arr||!arr.length) return null; const c={}; let best=null,bn=0;
+  for(const x of arr){ c[x]=(c[x]||0)+1; if(c[x]>bn){bn=c[x]; best=x;} } return best; };
+// THE RIG (rig.mjs) — every figure is a named STATE of a rig + the EYE overlay; sprites map over these names.
+const EYE_WORD = RIG_EYE_WORD;
+// gunman or GUNWOMAN — every line about the man across the street goes through this
+const PR = c => (c && c.pron === "she") ? { he:"she", him:"her", his:"her", He:"She", HE:"SHE", HIM:"HER", man:"woman" }
+                                        : { he:"he",  him:"him", his:"his", He:"He",  HE:"HE",  HIM:"HIM", man:"man" };
+const POSE = { char:null, state:"idleA", eyes:null, winged:false, breathing:false, pair:null };
+function figureArt(char, winged, eyes, state){
+  const st = state || (winged ? "winged_idle" : "idleA");
+  return frame(char, st, eyes);
+}
+// PAINTED SPRITES — preload every frame; load each rig's eye anchors (the sockets measured by the cutter).
+const SPRITE_META = {};
+for (const [name, sp] of Object.entries(SPRITES)){
+  sp.states.forEach(st => { const i = new Image(); i.src = sp.base + st + (sp.suffix || "") + ".png"; });
+  fetch(sp.meta).then(r => r.json()).then(async m => { if (LAB_HSCALE3D && name === "HUNTER 1"){ try { const g = await (await fetch(LAB + "guides/duel1c/cop_GUIDE.json")).json(); m = { ...m, hScale: g.hScale }; } catch {} } SPRITE_META[name] = m; }).catch(() => {});
+}
+HAND_SPRITES.states.forEach(st => { const i = new Image(); i.src = HAND_SPRITES.base + st + (HAND_SPRITES.suffix || "") + ".png"; });
+FX_SPRITES.names.forEach(n => { const i = new Image(); i.src = FX_SPRITES.base + n + ".png"; });
+EYE_CLOSEUPS.looks.forEach(l => { const i = new Image(); i.src = EYE_CLOSEUPS.base + l + (EYE_CLOSEUPS.ext || ".png"); });
+$("scene").classList.add("painted");                      // Bob's painted hand is on
+// THE STREET PLATE — Detroit painted in code (no palm trees). Sized to the scene; redrawn on resize.
+function paintPlate(){ const cv = $("plate"), r = $("scene").getBoundingClientRect();
+  cv.width = Math.max(320, Math.round(r.width)); cv.height = Math.max(200, Math.round(r.height)); drawPlate(cv, 7); $("world").classList.add("plated"); }
+paintPlate(); window.addEventListener("resize", paintPlate);
+function stagePlate(si){ $("world").classList.toggle("painted1", si === 0); }   // PLATE 1 = stage 1
+stagePlate(0);
+const spriteFor = c => (c && SPRITES[c.name]) || null;
+// the nearest painted frame for a rig state (idleB→idleA etc. if a sheet lacks one)
+function spriteState(sp, st){
+  if (sp.states.includes(st)) return st;
+  return { idleB:"idleA", twitch:"idleA", winged_draw:"winged_idle", winged_hit:"winged_idle", down2:"down",
+           draw1:"draw", draw2:"draw", draw3:"draw" }[st] || (st.startsWith("winged") ? "winged_idle" : "idleA");
+}
+function render(){
+  if (POSE.pair) return;
+  const sp = spriteFor(POSE.char);
+  $("man").classList.toggle("sprite", !!sp);
+  if (sp){
+    const st = spriteState(sp, POSE.state);
+    const img = $("manImg"), src = sp.base + st + (sp.suffix || "") + ".png";
+    const scaleTo = () => {                                        // ONE scale: the standing frame's height = the box
+      const meta = SPRITE_META[POSE.char.name] || {}, box = $("man").getBoundingClientRect().height;
+      const rel = meta.hScale && meta.hScale[st];                 // a kneeling/fallen pose's height vs standing
+      img.style.height = (rel ? rel * box : img.naturalHeight / (meta.refH || 310) * box) + "px";
+    };
+    if (!img.src.endsWith(src)) { img.onload = () => { scaleTo(); placeEyes(sp, st); fitZones(); }; img.src = src; }
+    else { scaleTo(); placeEyes(sp, st); fitZones(); }
+    return;
+  }
+  hideEyes();
+  $("manArt").textContent = figureArt(POSE.char, POSE.winged, POSE.eyes, POSE.state);
+  fitZones();
+}
+// PAINTED ANIMATIONS (rig.mjs SPRITES[].anim): play a short frame sequence on the current man, ending on its
+// last frame. Returns a promise. A newer animation cancels an older one (the token).
+let _animTok = 0;
+async function animate(key, ms){
+  const sp = spriteFor(POSE.char); const seq = sp && sp.anim && sp.anim[key];
+  if (!seq || POSE.pair) return false;
+  const tok = ++_animTok;
+  for (const st of seq){ if (tok !== _animTok) return true; POSE.state = st; render(); await sleep(ms); }
+  return true;
+}
+// tiny eyes IN his sockets (anchors from the cutter) — the look follows POSE.eyes (the tell)
+function hideEyes(){ $("eyeL").style.display = $("eyeR").style.display = "none"; }
+function placeEyes(sp, st){
+  const meta = SPRITE_META[POSE.char.name], anchors = meta && meta.eyes && meta.eyes[st];
+  if (!anchors || anchors.length < 2 || st === "down"){ hideEyes(); return; }
+  const img = $("manImg"), ir = img.getBoundingClientRect(), mr = $("man").getBoundingClientRect();
+  const look = POSE.eyes || (st.startsWith("hit") ? "DEAD" : "idle");
+  [["eyeL", anchors[0]], ["eyeR", anchors[1]]].forEach(([id, [x, y, w, h]]) => {
+    const e = $(id); e.style.display = "block"; e.className = "eyeDot " + look;
+    e.style.left = (ir.left - mr.left + x*ir.width) + "px"; e.style.top = (ir.top - mr.top + y*ir.height) + "px";
+    e.style.width = Math.max(4, w*ir.width) + "px"; e.style.height = Math.max(3, h*ir.height) + "px";
+  });
+}
+// the Leone close-up of his eyes — on while you read him (and on the stare); null hides it
+function eyeInsert(look){
+  const box = $("eyeInsert");
+  if (!look || !spriteFor(POSE.char)){ box.classList.remove("on"); return; }
+  $("eyeInsertImg").src = EYE_CLOSEUPS.base + look + (EYE_CLOSEUPS.ext || ".png"); box.classList.add("on");
+}
+// a painted effect over the man, at (fx, fy) fractions of his figure
+function fxAt(name, fx=0.5, fy=0.4, scale=1){
+  const mr = $("man").getBoundingClientRect(), sr = scn().getBoundingClientRect(), i = document.createElement("img");
+  i.className = "fxImg"; i.src = FX_SPRITES.base + name + ".png"; i.style.height = (sr.height*0.16*scale) + "px";
+  i.style.left = (mr.left - sr.left + fx*mr.width) + "px"; i.style.top = (mr.top - sr.top + fy*mr.height) + "px";
+  scn().appendChild(i); setTimeout(() => i.remove(), 600);
+}
+// FIT THE TARGETS TO THE BODY. Measure the drawn figure (monospace grid) and place the zones on it:
+// HEAD = the top ~40% of its rows, CENTER = the chest rows below, WING = the low rows. Horizontal extent
+// = the columns that actually have ink in those rows (so the head is genuinely the SMALL target).
+// Works for any rig height and for the pair; sprites can later supply their own boxes.
+const _fitCanvas = document.createElement("canvas");
+function fitZonesImg(){
+  const img = $("manImg"); if (!img.naturalWidth) return;
+  const W = img.naturalWidth, H = img.naturalHeight; _fitCanvas.width = W; _fitCanvas.height = H;
+  const cx = _fitCanvas.getContext("2d", { willReadFrequently:true }); cx.clearRect(0,0,W,H); cx.drawImage(img, 0, 0);
+  let data; try { data = cx.getImageData(0,0,W,H).data; } catch { return; }
+  const ir = img.getBoundingClientRect(), mr = $("man").getBoundingClientRect(), sx = ir.width/W, sy = ir.height/H;
+  // bands: the head = top ~19% of a standing figure, the chest to ~52%, the wing = the low body
+  const bands = { HEAD:[0, Math.round(H*0.19)], CENTER:[Math.round(H*0.19), Math.round(H*0.52)], WING:[Math.round(H*0.52), H] };
+  for (const [lane,[a,b]] of Object.entries(bands)){
+    let lo = W, hi = -1;
+    for (let y=a; y<b; y+=2) for (let x=0; x<W; x++) if (data[(y*W + x)*4 + 3] > 120){ if (x < lo) lo = x; if (x > hi) hi = x; }
+    if (hi < 0){ lo = 0; hi = W-1; }
+    if (lane === "HEAD"){ const mid = (lo+hi)/2, half = Math.min((hi-lo)/2, W*0.16); lo = mid-half; hi = mid+half; }  // the head, not the gun arm
+    const z = $("z"+lane);
+    z.style.left = (ir.left - mr.left + lo*sx) + "px"; z.style.width = ((hi-lo+1)*sx) + "px";
+    z.style.top = (ir.top - mr.top + a*sy) + "px"; z.style.height = ((b-a)*sy) + "px"; z.style.transform = "none";
+  }
+}
+function fitZones(){
+  if ($("man").classList.contains("sprite")) return fitZonesImg();
+  const pre = $("manArt"), man = $("man"); const txt = pre.textContent; if (!txt) return;
+  const lines = txt.split("\n"); const n = lines.length; if (n < 3) return;
+  const pr = pre.getBoundingClientRect(), mr = man.getBoundingClientRect();
+  const maxLen = Math.max(...lines.map(l => [...l].length)) || 1;
+  const cw = pr.width / maxLen, lh = pr.height / n;
+  const hEnd = Math.max(1, Math.round(n*0.42)), cEnd = Math.max(hEnd+1, Math.round(n*0.72));
+  const bands = { HEAD:[0,hEnd], CENTER:[hEnd,cEnd], WING:[cEnd,n] };
+  for (const [lane,[a,b]] of Object.entries(bands)){
+    let lo = 1e9, hi = -1;
+    for (let i=a;i<b;i++){ const L = [...(lines[i]||"")]; L.forEach((ch,c) => { if (ch !== " ") { lo = Math.min(lo,c); hi = Math.max(hi,c); } }); }
+    if (hi < 0){ lo = 0; hi = maxLen-1; }
+    const z = $("z"+lane);
+    z.style.left = (pr.left - mr.left + lo*cw - 4) + "px"; z.style.width = ((hi-lo+1)*cw + 8) + "px";
+    z.style.top = (pr.top - mr.top + a*lh - 2) + "px"; z.style.height = ((b-a)*lh + 4) + "px";
+    z.style.transform = "none";
+  }
+}
+window.addEventListener("resize", () => { fitZones(); if (POSE.char && spriteFor(POSE.char) && !POSE.pair) render(); });
+const drawMan = (char, winged, eyes=null, state=null) => {
+  $("man").classList.remove("down","pair");
+  Object.assign(POSE, { char, winged, eyes, state: state || (winged ? "winged_idle" : "idleA"), pair:null });
+  render();
+  $("man").classList.toggle("winged", winged);
+  $("man").classList.toggle("boss", isBossChar(char));
+};
+// set a pose on the current man (keeps his eyes unless given). winged men draw with their winged_* frames.
+function pose(state, eyes){
+  if (!POSE.char) return;
+  const st = POSE.winged && (state==="draw" || state==="idleA" || state==="idleB") ? (state==="draw" ? "winged_draw" : "winged_idle") : state;
+  POSE.state = st; if (eyes !== undefined) POSE.eyes = eyes; render();
+}
+// he's alive the whole time: idle A <-> idle B while breathing is on (steady…, reading)
+setInterval(() => { if (!POSE.breathing || POSE.pair) return;
+  if (POSE.state==="idleA") { POSE.state="idleB"; render(); } else if (POSE.state==="idleB") { POSE.state="idleA"; render(); } }, TIMING.breath);
+// THE SEVEN-JOHNS: two men side by side, each with his own state + eyes. A dead John is a drop.
+function drawPair(j1, j2, e1=null, e2=null, s1=null, s2=null){
+  const a = (j1.alive ? figureArt(j1.char, j1.winged, e1, s1) : FOE_DOWN).split("\n");
+  const b = (j2.alive ? figureArt(j2.char, j2.winged, e2, s2) : FOE_DOWN).split("\n");
+  const w = Math.max(...a.map(l => l.length)) + 4, n = Math.max(a.length, b.length);
+  const lines = []; for (let i=0;i<n;i++) lines.push((a[i]||"").padEnd(w) + (b[i]||""));
+  POSE.pair = [j1, j2];
+  $("man").classList.remove("down","winged","boss"); $("man").classList.add("pair");
+  $("manArt").textContent = lines.join("\n");
+  fitZones();
+}
+const PRES_ART = PRESIDENT_ART.idle.replace("{E}", "o o");
+function showPres(on, dead=false){ const p=$("pres"); p.textContent = dead ? PRESIDENT_ART.down : PRES_ART; p.classList.toggle("on", on); p.classList.toggle("down", dead); }
+// HIS GUARD drifts to your habit: the CPU guards the lane you shoot most (read_skill of the time).
+// Show it — dashed on that lane, stronger the better he reads. Spam one lane and you watch him cover it.
+function showGuard(opp, bob){
+  const lean = mostCommon(bob.attacks); LANES.forEach(l => $("z"+l).classList.remove("guard"));
+  if (!lean) return null;
+  const z = $("z"+lean); z.classList.add("guard");
+  z.style.opacity = String(Math.min(1, 0.35 + (opp.char.read_skill || 0.4)));
+  return lean;
+}
+function hideGuard(){ LANES.forEach(l => { $("z"+l).classList.remove("guard"); $("z"+l).style.opacity=""; }); }
+const clock = html => $("clock").innerHTML = html;
+// LIFE: two pips. alive+clean = ▮▮, winged = ▮▯, dead = ▯▯. (The engine's one wound bit, drawn as a bar.)
+function pips(side){ const n = !side ? 2 : !side.alive ? 0 : side.winged ? 1 : 2;
+  return `<span>${"▮".repeat(n)}</span><span class="gone">${"▯".repeat(2-n)}</span>`; }
+function critical(on){ $("scene").classList.toggle("critical", !!on); SWAY.shaky = !!on; }
+function setLife(bob, opp){
+  if (bob){ $("hBob").innerHTML = pips(bob); $("hBob").classList.toggle("hurt", !!bob.winged); critical(bob.alive && bob.winged); }
+  if (opp !== undefined){ const e = $("hHim");
+    e.innerHTML = Array.isArray(opp) ? opp.map(pips).join(" ") : pips(opp); e.classList.toggle("hurt", !Array.isArray(opp) && !!(opp && opp.winged)); }
+}
+// Bob's gun-hand, first person (rig states: idle / aim / recoil / fan / hurt / feint)
+function hand(state){ const h = $("hand"); h.textContent = HANDS[state] || HANDS.idle;
+  const st = HAND_SPRITES.states.includes(state) ? state : "idle"; $("handImg").src = HAND_SPRITES.base + st + (HAND_SPRITES.suffix || "") + ".png"; }
+// the gun-barrel iris
+function iris(mode){ const i = $("iris"); i.classList.remove("tight","open"); if (mode) i.classList.add(mode); }
+const fmt = t => (t===Infinity ? "FALSE START" : t >= 9 ? "—" : t.toFixed(2)+"s");
+const dropFoe = () => { POSE.breathing = false;
+  if (spriteFor(POSE.char) && !POSE.pair){ eyeInsert(null); const sp = spriteFor(POSE.char);
+    if (sp.anim && sp.anim.down) animate("down", TIMING.fallFrame); else { POSE.state = "down"; render(); } }
+  else { $("manArt").textContent = FOE_DOWN; fitZones(); } $("man").classList.remove("winged"); $("man").classList.add("down");
+  flare(); sting('kill'); sfx.roar(); crowdReact("cheer", 2600); };   // the killshot hard-cuts to the painted kill + crowd roar — "DID YOU SEE THAT?"
+// the WINGED beat — a wound, NOT a kill: a blood-red flash + recoil stagger on the foe figure.
+// Deliberately small (no painted hard-cut, no crowd roar) so it reads as "he's hit, still up."
+function woundFX(){ crowdReact("recoil", 1800); const m = $("man"); m.classList.remove("wound"); void m.offsetWidth; m.classList.add("wound");
+  setTimeout(() => m.classList.remove("wound"), 600); }
+// muzzle flash off your gun-hand on a connecting shot, with a short stage shake
+async function muzzleFX(){
+  const h = $("hand"); $("man").classList.add("shake");
+  h.textContent = HANDS.recoil; h.classList.add("fire"); hand("recoil"); await sleep(90);
+  h.textContent = HANDS.recoil2; hand("recoil2"); await sleep(110);
+  h.textContent = HANDS.aim; hand("aim"); h.classList.remove("fire"); $("man").classList.remove("shake");
+}
+const setHUD = r => { $("hRec").textContent = r.dishonor || 0; $("hRec").classList.toggle("lethal", (r.dishonor||0) >= DISHONOR_SHAMED); $("hLeg").textContent = r.legend; $("hScore").textContent = r.score.toLocaleString(); };
+const setPoem = n => { $("poem").textContent = Array.from({length:SONNET_LENGTH}, (_,i)=> i<n?"●":"·").join("") + `  ${n}/${SONNET_LENGTH}`; };
+const banner = (big, sub="", flash=false) => { $("big").textContent = big; $("sub").textContent = sub; if(flash){ $("big").classList.remove("flash"); void $("big").offsetWidth; $("big").classList.add("flash"); } };
+const prompt = html => $("prompt").innerHTML = html;
+const clearZones = () => LANES.forEach(l => $("z"+l).classList.remove("sel","read"));
+const showZone = (lane, cls) => { clearZones(); $("z"+lane).classList.add(cls); };
+
+// ---- ASCII/SPRITE COMBO: the ASCII crowd lining the street + painted-still hard-cuts ----
+const STING = { duel:"sprites/cabinet/duel.png", kill:"sprites/cabinet/kill.png", pres:"sprites/cabinet/president.png" };
+Object.values(STING).forEach(s => { const i = new Image(); i.src = s; });   // preload the painted cuts
+const CROWD_GLYPH = "mnhñmnhmñnhmnñh";
+function buildCrowd(){ const el = $("crowd"); if(!el || el.childElementCount) return;
+  let h=""; for(let i=0;i<46;i++) h += `<span>${CROWD_GLYPH[(i*7+3)%CROWD_GLYPH.length]}</span>`; el.innerHTML = h; }
+let _twk = 0;
+function crowdTwinkle(){ const s = $("crowd").children; if(!s.length) return;
+  for(let k=0;k<3;k++) s[(_twk*13+k*17)%s.length].classList.toggle("lit"); _twk++; }
+function flare(){ const c = $("crowd"); c.classList.add("flare"); setTimeout(()=>c.classList.remove("flare"), 420); }
+function sting(which){ const img = $("sting"), src = STING[which]; if(!src) return;
+  img.src = src; img.classList.remove("cut"); void img.offsetWidth; img.classList.add("cut"); }
+// BONUS coin-rain — "the crowd throws coins": ASCII tokens tumble down over the bonus screen.
+// Render-local RNG only (Math.random — visual; never the engine RNG, per the guardrail).
+const COIN_GLYPH = ["¢","$","◉","●","⊙","◎","¤","◍"];
+function coinRain(count=26){ const el = $("coinrain"); if(!el) return; el.innerHTML = "";
+  for(let i=0;i<count;i++){ const c = document.createElement("span"); c.className = "coin";
+    c.textContent = COIN_GLYPH[(Math.random()*COIN_GLYPH.length)|0];
+    c.style.left = (Math.random()*98).toFixed(1) + "%";
+    c.style.fontSize = (1.0 + Math.random()*1.6).toFixed(2) + "vh";
+    c.style.animationDuration = (0.85 + Math.random()*0.8).toFixed(2) + "s";
+    c.style.animationDelay = (Math.random()*0.9).toFixed(2) + "s";
+    el.appendChild(c); }
+  setTimeout(() => { if($("coinrain")) $("coinrain").innerHTML = ""; }, 2600);
+}
+buildCrowd(); setInterval(crowdTwinkle, 360);
+
+// ---- duel SFX (procedural WebAudio; no asset files) — gunshot / block-click / crowd roar / WHOA riser ----
+let _AC = null; const ac = () => (_AC ||= new (window.AudioContext || window.webkitAudioContext)());
+function _noise(dur){ const c = ac(); const n = Math.floor(c.sampleRate*dur); const b = c.createBuffer(1,n,c.sampleRate);
+  const d = b.getChannelData(0); for(let i=0;i<n;i++) d[i] = Math.random()*2-1; const s = c.createBufferSource(); s.buffer = b; return s; }
+function _env(node, peak, dur, atk=0.005){ const c = ac(), g = c.createGain(), t = c.currentTime;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(peak,t+atk); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  node.connect(g); g.connect(c.destination); return g; }
+const sfx = {
+  shot(){ try{ const c = ac(); const s = _noise(0.18), lp = c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1700;
+    s.connect(lp); _env(lp,0.5,0.2); s.start();                                   // the crack
+    const o = c.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(130,c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(42,c.currentTime+0.15); _env(o,0.5,0.18); o.start(); o.stop(c.currentTime+0.2); // the thump
+  }catch(e){} },
+  block(){ try{ const c = ac(); const s = _noise(0.05), bp = c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2700; bp.Q.value=3;
+    s.connect(bp); _env(bp,0.3,0.06); s.start(); }catch(e){} },                   // dry ricochet tick
+  roar(){ try{ const c = ac(), t = c.currentTime; const s = _noise(1.1), bp = c.createBiquadFilter(); bp.type="bandpass"; bp.Q.value=0.7;
+    bp.frequency.setValueAtTime(480,t); bp.frequency.linearRampToValueAtTime(1150,t+0.5); s.connect(bp);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.4,t+0.22);
+    g.gain.linearRampToValueAtTime(0.28,t+0.7); g.gain.exponentialRampToValueAtTime(0.0001,t+1.1); bp.connect(g); g.connect(c.destination); s.start(); }catch(e){} },
+  whoa(){ try{ const c = ac(); const o = c.createOscillator(); o.type="sawtooth"; o.frequency.setValueAtTime(110,c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(640,c.currentTime+0.5); const lp = c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1200;
+    o.connect(lp); _env(lp,0.3,0.6,0.04); o.start(); o.stop(c.currentTime+0.62); }catch(e){} },
+  deye(){ try{ const c = ac(), t = c.currentTime; [988,1319].forEach((f,i) => {     // a bright two-note "ting" — the natural's flourish
+    const o = c.createOscillator(); o.type="triangle"; o.frequency.value=f; _env(o,0.16,0.2,0.004); o.start(t+i*0.05); o.stop(t+i*0.05+0.22); }); }catch(e){} },
+  wound(){ try{ const c = ac(), t = c.currentTime;                                  // a wet, low thud — flesh hit, not fatal (no crack, no roar)
+    const s = _noise(0.13), lp = c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=520; s.connect(lp); _env(lp,0.42,0.17); s.start();
+    const o = c.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(92,t);
+    o.frequency.exponentialRampToValueAtTime(54,t+0.13); _env(o,0.32,0.15); o.start(); o.stop(t+0.16); }catch(e){} },
+  twitch(){ try{ const c = ac(); const s = _noise(0.03), bp = c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=900; bp.Q.value=2;
+    s.connect(bp); _env(bp,0.12,0.04); s.start(); }catch(e){} },                  // leather creak — the body lies
+  hammer(){ try{ const c = ac(); const s = _noise(0.04), bp = c.createBiquadFilter(); bp.type="highpass"; bp.frequency.value=3200;
+    s.connect(bp); _env(bp,0.35,0.05); s.start(); }catch(e){} },                  // the hammer falls
+  flash(){ try{ const c = ac(), t = c.currentTime; const o = c.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(3200,t);
+    o.frequency.exponentialRampToValueAtTime(900,t+0.25); _env(o,0.25,0.3,0.002); o.start(); o.stop(t+0.32); }catch(e){} },  // the flashbulb whine
+  coins(){ try{ const c = ac(), t = c.currentTime;                                  // metallic shimmer — tokens hitting the street
+    [0,0.06,0.11,0.17,0.24,0.33,0.41].forEach((dt,i) => { const f = 2300 + ((i*617)%1500);
+      const o = c.createOscillator(); o.type="triangle"; o.frequency.value = f;
+      const bp = c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value = f; bp.Q.value = 6;
+      o.connect(bp); _env(bp, 0.10, 0.09, 0.002); o.start(t+dt); o.stop(t+dt+0.1); }); }catch(e){} },
+};
+
+window.__combo = { sting, flare, sfx, flip:(legend=8)=>crowdFlip({legend}),     // dev/test hook: preview a painted cut / sound / the finale button-flip (cf. window.__scene)
+  wound:(who="")=>{ const c = who==="marshal"?MARSHAL : who==="batter"?BATTER : {name:"",weapon:GUN}; drawMan(c,true); woundFX(); sfx.wound(); },
+  coins:()=>{ coinRain(); sfx.coins(); flare(); } };                            // preview the BONUS coin-rain
+
+function overlay(html){ const o=$("overlay"); o.className="show"; o.style.backgroundImage=""; if (typeof labBg === "function") labBg(o, null); o.innerHTML=html; return o; }
+function hideOverlay(){ $("overlay").classList.remove("show"); }
+
+// ---- input ----
+const KEYLANE = { ArrowUp:HEAD, KeyW:HEAD, Digit1:HEAD, ArrowDown:WING, KeyS:WING, Digit3:WING, Digit2:CENTER, KeyC:CENTER };
+// nextKey now resolves on a TAP too (pointerdown), so a no-keyboard light-gun can advance
+// any "press any key" beat. Predicates that demand a specific code still ignore the tap.
+function nextKey(valid){
+  return new Promise(res => {
+    const w = { esc: valid("Escape") && !valid("__probe") }; WAITERS.add(w);          // UI-AUDIT 1110: the pause gate (below)
+    const cleanup = () => { WAITERS.delete(w); window.removeEventListener("keydown", k); window.removeEventListener("pointerdown", p); };
+    const k = e => { if (valid(e.code)) { cleanup(); res(e.code); } };
+    const p = () => { if (valid("Pointer")) { cleanup(); res("Pointer"); } };
+    window.addEventListener("keydown", k); window.addEventListener("pointerdown", p);
+  });
+}
+// ===== UI-AUDIT 1110: THE PAUSE MENU — ESC / P / pad START, BETWEEN beats only (whenever the game is waiting on a key).
+// A live draw is timed, so a pause can't freeze it fairly: mid-duel the keys pass through untouched, as before.
+// RESUME · HOW TO PLAY · QUIT TO TITLE (a clean reload = the title). Keys never reach the game while it's open.
+const WAITERS = new Set(); let RUN = false;
+const PAUSE = { on:false, i:0, how:false };
+const pauseEl = document.createElement("div"); pauseEl.id = "pausemenu"; document.body.appendChild(pauseEl);
+pauseEl.addEventListener("pointerdown", e => e.stopPropagation());
+const PITEMS = [["RESUME", () => closePause()], ["HOW TO PLAY", () => { PAUSE.how = true; drawPause(); }],
+  ["QUIT TO TITLE", () => { PAUSE.confirm = true; drawPause(); }]]
+  .concat(new URLSearchParams(location.search).get("from") === "keep" ? [["QUIT TO ARCADE", () => { location.href = "../../COLEMAN'S KEEP.html"; }]] : []);   // Q259
+function drawPause(){
+  pauseEl.className = PAUSE.on ? "show" : "";
+  if (!PAUSE.on) return;
+  if (PAUSE.how){ pauseEl.innerHTML = `<h1>HOW TO PLAY</h1><p>Watch the man. His <b>body</b> says <i>when</i>, his <b>eyes</b> say <i>where</i> (mostly).
+    On <span class="gold">DRAW!</span> aim and fire: <span class="k">↑</span> HEAD · <span class="k">C</span> CENTER · <span class="k">↓</span> GUT/WING — or the light pistol.</p>
+    <p><span class="k">F</span> during <i>steady…</i> sells your shoulder. <span class="k">E</span> / right-click on <span class="k">WHOA!</span> fans the hammer.</p>
+    <p class="dim">KILL removes him. WING changes him. BLOCK postpones him. You are meant to lose.</p>
+    <p class="dim">ESC pauses between duels (a live draw can't be paused).</p><div class="start">any key — back</div>`; return; }
+  if (PAUSE.confirm){ pauseEl.innerHTML = `<h1>QUIT TO TITLE?</h1><p class="dim">this run is over</p>
+    <p><span class="k">Y</span> / ENTER yes &nbsp;·&nbsp; <span class="k">N</span> / ESC no</p>`; return; }
+  pauseEl.innerHTML = `<h1>PAUSED</h1>` + PITEMS.map(([t], i) => `<p class="pi${i === PAUSE.i ? " sel" : ""}" data-i="${i}">${i === PAUSE.i ? "▶ " : ""}${t}</p>`).join("")
+    + `<p class="dim" style="margin-top:2vh">↑ ↓ choose · ENTER / FIRE go · ESC resume</p>`;
+  pauseEl.querySelectorAll(".pi").forEach(el => el.onclick = () => { PAUSE.i = +el.dataset.i; PITEMS[PAUSE.i][1](); });
+}
+function openPause(){ PAUSE.on = true; PAUSE.i = 0; PAUSE.how = false; PAUSE.confirm = false; drawPause(); }
+function closePause(){ PAUSE.on = false; drawPause(); }
+window.addEventListener("keydown", e => {
+  const c = e.code;
+  if (PAUSE.on){
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (PAUSE.how){ PAUSE.how = false; drawPause(); return; }
+    if (PAUSE.confirm){ if (c === "KeyY" || c === "Enter" || c === "Space") location.reload(); else if (c === "KeyN" || c === "Escape"){ PAUSE.confirm = false; drawPause(); } return; }
+    if (c === "Escape" || c === "KeyP") closePause();
+    else if (c === "ArrowUp" || c === "KeyW"){ PAUSE.i = (PAUSE.i + PITEMS.length - 1) % PITEMS.length; drawPause(); }
+    else if (c === "ArrowDown" || c === "KeyS"){ PAUSE.i = (PAUSE.i + 1) % PITEMS.length; drawPause(); }
+    else if (c === "Enter" || c === "Space") PITEMS[PAUSE.i][1]();
+    return;
+  }
+  if ((c === "Escape" || c === "KeyP") && RUN && WAITERS.size && ![...WAITERS].some(w => w.esc && c === "Escape")){
+    e.preventDefault(); e.stopImmediatePropagation(); openPause();
+  }
+}, true);
+async function pressAny(label0){ prompt(label0); await nextKey(()=>true); }
+
+// ===== LIGHT-PISTOL AIM — the fused squeeze: WHERE the crosshair sits = the lane,
+// WHEN you pull = the draw timing, HOW centered = the dead-eye. One motion, the whole duel. =====
+const DEAD_EYE_TH = 0.55;                 // centering >= this on a HEAD kill = a clean DEAD-EYE headshot
+let aimZone = CENTER, aimCenter = 1, aiming = false;
+const scn = () => $("scene");
+function hoverZone(lane){ LANES.forEach(l => $("z"+l).classList.toggle("aim", aiming && l===lane)); }
+// which lane is under client-Y, and how centered (1 = bullseye, 0 = the edge / off the band)
+function zoneAtY(cy){
+  let best = { lane:CENTER, center:0 }, bd = 1e9;
+  for (const l of LANES){ const r = $("z"+l).getBoundingClientRect(), mid = r.top + r.height/2, half = r.height/2 || 1;
+    if (cy>=r.top && cy<=r.bottom) return { lane:l, center: 1 - Math.min(1, Math.abs(cy-mid)/half) };
+    const d = Math.abs(cy-mid); if (d<bd){ bd=d; best={ lane:l, center:0 }; } }
+  return best;
+}
+// a SHOT has to land ON him: inside a zone's box (x AND y), else it's WIDE (lane null). Centering is 2-D.
+function zoneAtXY(cx, cy){
+  for (const l of LANES){ const r = $("z"+l).getBoundingClientRect();
+    if (cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom){
+      const dx = Math.abs(cx-(r.left+r.width/2))/(r.width/2||1), dy = Math.abs(cy-(r.top+r.height/2))/(r.height/2||1);
+      return { lane:l, center: 1 - Math.min(1, Math.max(dx, dy)) }; } }
+  return { lane:null, center:0 };
+}
+// SWAY — "fast is fine, but accuracy is everything." In a SHOT the drawn crosshair = your hand + a sway that
+// SETTLES after the draw starts (τ≈0.25s). Fire early and the sway decides where it lands. A winged Bob
+// never fully settles. Render-only (the house glide pattern): the engine only ever sees the lane you hit.
+const SWAY = { on:false, t0:0, shaky:false };
+let ptrX = 0, ptrY = 0, drawnX = 0, drawnY = 0;
+function swayOffset(){
+  if (!SWAY.on) return [0,0];
+  const t = (performance.now() - SWAY.t0)/1000, H = scn().getBoundingClientRect().height;
+  const tau = SWAY.shaky ? TIMING.swayTau*1.8 : TIMING.swayTau;              // CRITICAL: settles slower…
+  const amp = H*TIMING.swayAmp*(SWAY.shaky ? 1.35 : 1)*Math.exp(-t/tau)
+            + H*(SWAY.shaky ? TIMING.swayShaky*(1 + 0.5*Math.sin(t*6.3)) : TIMING.swaySettled);   // …and never sits still (a pulse)
+  return [amp*Math.sin(t*9.1+0.6), amp*Math.sin(t*7.3+1.9)];
+}
+function placeAim(){
+  const [ox, oy] = swayOffset(); drawnX = ptrX + ox; drawnY = ptrY + oy;
+  const s = scn().getBoundingClientRect(), a = $("aim");
+  a.style.left = (drawnX-s.left)+"px"; a.style.top = (drawnY-s.top)+"px"; if (aiming) a.classList.add("on");
+  const z = SWAY.on ? zoneAtXY(drawnX, drawnY) : zoneAtY(drawnY);
+  aimZone = z.lane; aimCenter = z.center; hoverZone(z.lane);
+}
+function moveAim(cx, cy){ ptrX = cx; ptrY = cy; placeAim(); }
+(function swayLoop(){ if (SWAY.on) placeAim(); requestAnimationFrame(swayLoop); })();
+const laneCenter = l => { const r = $("z"+l).getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; };
+scn().addEventListener("pointermove", e => moveAim(e.clientX, e.clientY));
+// resolve to {lane, center} on a squeeze: tap/click a zone, Space (current hover), or a ↑●↓ key.
+// opts.timeout (ms) -> resolves {lane:null} if you don't squeeze in time (the READ WINDOW).
+// opts.pres -> the President is a target: clicking him (or P) resolves lane "PRES".
+// opts.shoot -> a SHOT: the crosshair sways and settles; ↑●↓ MOVE your hand to a lane (they don't fire);
+// the click / Space / FIRE button fires wherever the DRAWN crosshair is. Off every zone = WIDE (lane null).
+function aimFire(opts={}){
+  return new Promise(res => {
+    aiming = true; $("aim").classList.add("hot");
+    if (opts.shoot){ SWAY.on = true; SWAY.t0 = performance.now(); placeAim(); }
+    let timer = null;
+    const finish = (lane, center) => {
+      SWAY.on = false;
+      scn().removeEventListener("pointerdown", pd); window.removeEventListener("keydown", kd); if (timer) clearTimeout(timer);
+      aiming = false; $("aim").classList.remove("hot","on"); LANES.forEach(l => $("z"+l).classList.remove("aim")); $("pres").classList.remove("aim");
+      res({ lane, center });
+    };
+    const pd = e => { if (e.target.closest("#overlay")) return; e.preventDefault();
+      if (opts.pres && e.target.closest("#pres")) return finish("PRES", 1);
+      ptrX = e.clientX; ptrY = e.clientY; placeAim(); finish(aimZone, aimCenter); };
+    const kd = e => { if (opts.pres && e.code==="KeyP") finish("PRES", 1);
+      else if (e.code in KEYLANE){ if (opts.shoot){ const [x,y] = laneCenter(KEYLANE[e.code]); ptrX = x; ptrY = y; placeAim(); } else finish(KEYLANE[e.code], 1); }
+      else if (e.code==="Space") finish(aimZone, aimCenter); };
+    scn().addEventListener("pointerdown", pd); window.addEventListener("keydown", kd);
+    if (opts.timeout) timer = setTimeout(() => finish(null, 0), opts.timeout);
+  });
+}
+async function askLane(label0, opts={}){
+  prompt(`${label0} &nbsp; <small>point &amp; fire</small> &nbsp; <span class="k">↑</span><span class="k">●</span><span class="k">↓</span>`);
+  return (await aimFire(opts)).lane;
+}
+// put the crosshair on his chest — the draw is a small vertical correction + the squeeze, not a sweep from nowhere
+function centerAim(){ const [x,y] = laneCenter(CENTER); moveAim(x, y); }
+// WHOA! — FAN THE HAMMER. 1st pull = the kill LANE, 2nd pull FANS: above the kill = STRONG, level/lower = OFF.
+async function fanTheHammer(){
+  prompt(`<span class="big gold">FAN THE HAMMER!</span> &nbsp; <small>empty it — pull for the LANE…</small>`);
+  const a = await aimFire({ timeout: 1400, shoot: true });
+  const lane = a.lane || CENTER;
+  showZone(lane,"sel"); await muzzleFX(); sfx.shot();
+  prompt(`<small>…now <b>fan</b> the follow-through — <span class="k">↑ high = STRONG</span> · <span class="k">↓ low = OFF</span></small>`);
+  const b = await aimFire({ timeout: 900, shoot: true });
+  const stance = b.lane && LANES.indexOf(b.lane) < LANES.indexOf(lane) ? STRONG : OFF;
+  await muzzleFX(); sfx.shot();
+  return { stance, lane, clean: a.center >= DEAD_EYE_TH };
+}
+// THE DRAW. "steady…" is a trap: fire now and it's a FALSE START (CRACK — he stares — he draws).
+// His body may TWITCH (a feint) to bait exactly that. Then DRAW! — crosshair already on his chest.
+// Returns { t (s, Infinity on a false start), lane, center }.
+async function drawShoot(feint, opts={}){
+  prompt(`<small>steady…</small> &nbsp; <span class="k">F</span> <small>sell the shoulder</small>`); clock("");
+  iris("tight"); hand("idle"); POSE.breathing = true; crowdReact("watch");
+  const wait = TIMING.steadyMin + Math.random()*TIMING.steadyRand;
+  let early = false, feinted = null;
+  const bait = e => {
+    if (e.type==="keydown" && e.code==="KeyF"){ if (!feinted && opts.onFeint) feinted = "asked"; return; }
+    if (e.type==="pointerdown" && e.button===1){ e.preventDefault(); if (!feinted && opts.onFeint) feinted = "asked"; return; }
+    if (e.type==="keydown" && !(e.code in KEYLANE) && e.code!=="Space") return;
+    if (e.target && e.target.closest && e.target.closest("#overlay")) return;
+    if (opts.nerve && opts.nerve()){ banner("COLD NERVE", "your hand stays. (once a stage)", true); return; }
+    early = true; };
+  window.addEventListener("keydown", bait); scn().addEventListener("pointerdown", bait);
+  const t0w = performance.now(); let twitched = !feint, twitchAt = wait*(0.35 + Math.random()*0.35), bit = false;
+  while (!early && !bit && performance.now()-t0w < wait){
+    if (!twitched && performance.now()-t0w >= twitchAt){ twitched = true;           // HIS feint: the body lies
+      const m=$("man"); m.classList.remove("twitch"); void m.offsetWidth; m.classList.add("twitch"); sfx.twitch();
+      const was = POSE.state; pose("twitch"); setTimeout(() => { if (POSE.state==="twitch") pose(was==="twitch"?"idleA":was); }, TIMING.twitch); }
+    if (feinted === "asked"){ feinted = await opts.onFeint(); if (feinted === "bit") bit = true; }   // YOUR feint
+    await sleep(16);
+  }
+  window.removeEventListener("keydown", bait); scn().removeEventListener("pointerdown", bait);
+  POSE.breathing = false;
+  if (early) return { t: Infinity, lane: null, center: 0, falseStart: true, feint: feinted };
+  centerAim(); iris("open"); hand("aim"); crowdReact("lean");
+  if (POSE.char && !POSE.pair && !bit){                                                // his hand snaps to the gun
+    if (POSE.winged || !(spriteFor(POSE.char) && spriteFor(POSE.char).anim)) pose("draw");
+    else animate("draw", TIMING.animFrame);
+  }
+  const t0 = performance.now();
+  prompt(`<span class="big gold">DRAW!</span> &nbsp; <small>correct &amp; fire — go for the head</small>`);
+  const fired = await new Promise(res => aimFire({ timeout: TIMING.drawTimeout, pres: !!opts.pres, shoot: true }).then(r => res({ ...r, at: performance.now() })));
+  const timedOut = fired.lane === null && fired.at - t0 >= TIMING.drawTimeout - 10;
+  return { lane: fired.lane, center: fired.center, t: timedOut ? 9 : (fired.at-t0)/1000, feint: feinted, bit };
+}
+// the false start, dramatized: CRACK into the dirt. He freezes, looks at Bob. Then draws.
+async function falseStart(char, winged){
+  sfx.shot(); banner("CRACK —", "you fired early. into the dirt.", true); iris("open");
+  await sleep(TIMING.falseStartCrack); drawMan(char, winged, "BOB"); $("man").classList.add("stare"); eyeInsert("BOB"); clock(`<span class="late">FALSE START</span>`);
+  await sleep(TIMING.falseStartStare); $("man").classList.remove("stare"); eyeInsert(null);
+}
+// WHOA! window — you won the draw; time nearly stops and the button lights for ~600ms.
+// Press it (E / Q / right-click / cab button) to fan the hammer. Do nothing: Bob finishes the clean shot.
+async function whoaWindow(){
+  $("scene").classList.add("slowmo"); sfx.whoa();
+  prompt(`<span id="whoabtn">WHOA!</span> &nbsp; <small>E / right-click — or let the clean shot go</small>`);
+  const hit = await new Promise(res => {
+    const done = v => { window.removeEventListener("keydown", kd); window.removeEventListener("contextmenu", cm); clearTimeout(t); res(v); };
+    const kd = e => { if (e.code==="KeyE" || e.code==="KeyQ") done(true); };
+    const cm = e => { e.preventDefault(); done(true); };
+    window.addEventListener("keydown", kd); window.addEventListener("contextmenu", cm);
+    const t = setTimeout(() => done(false), TIMING.whoaWindow);
+  });
+  $("scene").classList.remove("slowmo");
+  return hit;
+}
+// on-screen choice buttons (keyboard OR tap) so a light-gun never needs a keyboard
+async function askButtons(label0, opts){
+  prompt(`${label0} &nbsp; ${opts.map(o => `<span class="k" id="${o.id}">${o.html}</span>`).join(" / ")}`);
+  return await new Promise(res => {
+    const hs = [];
+    const done = v => { window.removeEventListener("keydown", kd); hs.forEach(([el,h]) => el && el.removeEventListener("pointerdown", h)); res(v); };
+    const kd = e => { const o = opts.find(o => o.keys.includes(e.code)); if (o) done(o.val); };
+    window.addEventListener("keydown", kd);
+    opts.forEach(o => { const el = $(o.id), h = ev => { ev.preventDefault(); done(o.val); }; if (el) el.addEventListener("pointerdown", h); hs.push([el,h]); });
+  });
+}
+async function askYesNo(label0){
+  return await askButtons(label0, [
+    { id:"bY", html:"Y", val:true,  keys:["KeyY"] },
+    { id:"bN", html:"N", val:false, keys:["KeyN","Enter","Space"] }]);
+}
+// DEAD-EYE — the headshot. Bob's a natural; a clean HEAD kill is the thing the crowd screams about.
+function deadEye(run, clean){
+  run.deadeye = (run.deadeye||0) + 1; run.deadeyeBest = Math.max(run.deadeyeBest||0, run.deadeye);
+  const b = $("deadeye");
+  b.querySelector(".dl").textContent = clean ? `DEAD-EYE${run.deadeye>1?` ×${run.deadeye}`:""}` : "HEADSHOT";
+  b.querySelector(".ds").textContent = clean ? "HEADSHOT — DID YOU SEE THAT?!" : "right between the eyes";
+  b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
+  flare(); if (clean) sfx.deye();
+}
+// THE GUT (0929): the low lane. A gut shot Bob LANDS is +1 DISHONOR — the crowd turns away; his family sees it.
+function gutShot(bob, run, lane, out){
+  if (lane !== WING || !(out === KILL || out === WINGED)) return;
+  bob.gut_shots++; if (run){ run.dishonor = bob.gut_shots; setHUD(run); }
+  $("crowd").classList.remove("flare");
+  setTimeout(() => banner("GUT SHOT", `dishonor ${bob.gut_shots} — the crowd turns away`, true), 700);
+}
+// THE SHOULDER — eyes come early and can lie; the torso commits late and never does. ~55% into your read
+// window his gun arm swings to the lane he'll REALLY shoot. Trust the eyes and guard early, or wait for the
+// shoulder and risk the window closing. (No shoulder in the flash — you can't see anything.) Returns a canceller.
+function shoulderCue(lane, tell, readMs){
+  if (tell === null) return () => {};
+  const t = setTimeout(() => { const z = $("z"+lane); z.classList.add("shoulder"); z.dataset.lbl = z.textContent; if (spriteFor(POSE.char) && !POSE.pair && !POSE.winged && spriteFor(POSE.char).states.includes("shoulder_"+lane)) pose("shoulder_"+lane); z.textContent = "◄══ his arm"; sfx.twitch(); }, readMs*TIMING.shoulderAt);
+  return () => { clearTimeout(t); LANES.forEach(l => { const z = $("z"+l); if (z.classList.contains("shoulder")){ z.classList.remove("shoulder"); z.textContent = z.dataset.lbl || z.textContent; } }); };
+}
+// THE FREEZE-FRAME — every shot, show BOTH halves of the read: the lane that was fired (gold) and the
+// lane that was guarded (red). "READ" = the guard met the shot; "CLEAN" = it didn't. This is how you learn.
+async function freeze(firedLane, guardLane, youShot){
+  clearZones();
+  if (guardLane) $("z"+guardLane).classList.add("read");
+  if (firedLane) $("z"+firedLane).classList.add("sel");
+  const read = firedLane && firedLane === guardLane;
+  if (youShot) banner(!firedLane ? "WIDE" : read ? "HE READ IT" : "CLEAN", `you → ${firedLane||"wide"} · his guard → ${guardLane||"—"}`, true);
+  else banner(read ? "YOU READ IT" : (guardLane ? "HE GOT PAST YOU" : "TOO SLOW"), `him → ${firedLane} · your guard → ${guardLane||"— none"}`, true);
+  await sleep(TIMING.freeze);
+}
+
+// ---- the interactive duel (mirrors engine.exchange rules, async for the human) ----
+// opts.alt = THE PRESIDENT in frame (a target you may choose). opts.first = force who draws (the flash).
+// opts.readMs = your READ WINDOW once he's drawn on you.
+async function exchange(eng, bob, opp, run, opts={}){
+  const readMs = opts.readMs || TIMING.readWindow;
+  SWAY.shaky = bob.winged; bob.exposed = false; opp.exposed = false;
+  drawMan(opp.char, opp.winged); setLife(bob, opp); hand(bob.winged ? "hurt" : "idle");
+  let attacker, shot = null;
+  if (opts.first){ attacker = opts.first; }
+  else {
+    showGuard(opp, bob);                                          // his guard, drifting to your habit
+    let tb = opp.ctrl.reflex(opp.char, eng.rng); if (opp.winged) tb += WINGED_SLOW;
+    const feint = !!(opp.char.feint && eng.rng.random() < opp.char.feint);
+    // YOUR shoulder feint (F / middle-click / cab button 2): if he bites he fires into the dirt and the draw
+    // is yours; if he doesn't, you're slower AND open low — a wing will kill you this exchange.
+    const onFeint = async () => {
+      hand("feint"); sfx.twitch();
+      if (opp.ctrl.bites(opp.char, eng.rng) || (bob.perks.has("SELL_IT") && eng.rng.random() < SELL_IT_SECOND)){  // SELL IT: a second chance
+        pose("fire"); sfx.shot(); banner(`${PR(opp.char).HE} BIT —`, "fired early, into the dirt. the draw is yours.", true);
+        await sleep(TIMING.falseStartCrack); return "bit"; }
+      bob.exposed = true; $("zWING").classList.add("open");
+      banner(`${PR(opp.char).HE} DIDN'T BUY IT`, "you're out of position — OPEN LOW", true); return "miss";
+    };
+    const nerve = () => (bob.perks.has("COLD_NERVE") && bob.nerve > 0) ? (bob.nerve--, true) : false;
+    shot = await drawShoot(feint, { pres: !!opts.alt, onFeint, nerve });
+    let ta = shot.t; if (ta !== Infinity && bob.winged && !bob.perks.has("COLD_NERVE")) ta += WINGED_SLOW;
+    if (ta !== Infinity && bob.perks.has("QUICK_HAND")) ta -= QUICK_HAND_S;
+    if (shot.feint === "miss" && ta !== Infinity && !bob.perks.has("SELL_IT")) ta += FEINT_COST;
+    if (shot.bit) tb = Infinity;
+    if (shot.falseStart) await falseStart(opp.char, opp.winged);
+    const youFirst = ta <= tb;
+    attacker = youFirst ? bob : opp;
+    clock(`BOB <b>${fmt(ta)}</b> &nbsp;—&nbsp; ${whoName(opp.char)} <b>${fmt(tb)}</b>${youFirst?"":' &nbsp;<span class="late">he\'s first</span>'}`);
+    hideGuard();
+  }
+  const reader = attacker === bob ? opp : bob;
+  banner(attacker===bob ? "YOU'RE FIRST" : `${whoName(opp.char)} IS FIRST`, attacker===bob ? "take the shot" : "watch his eyes", true);
+
+  if (attacker === bob){
+    // WHOA — only Bob, only when available, only in a ~600ms window; nothing = the clean shot you earned
+    const whoa = bob.whoa_available && bob.char.showboat && await whoaWindow();
+    if (!whoa){
+      if (opts.alt && shot.lane === "PRES"){                       // he turned the gun on the President
+        opts.alt.alive = false; showPres(true, true); await muzzleFX(); sfx.shot(); sfx.roar(); flare(); sting('pres');
+        banner("THE PRESIDENT OF MICHIGAN", "dead. on the broadcast.", true); await sleep(1200);
+        return { dead: opts.alt, out: KILL };
+      }
+      const lane = shot.lane, clean = shot.center >= DEAD_EYE_TH;
+      if (!lane){ await freeze(null, null, true); sfx.shot(); sfx.block(); fxAt("dust", 0.5, 0.95); if (spriteFor(POSE.char) && !POSE.winged && !POSE.pair && spriteFor(POSE.char).states.includes("miss")) pose("miss"); crowdReact("point", 1600);   // pulled it WIDE — the sway won
+        banner("WIDE", "you pulled it. he's still out there.", true); if (run) run.deadeye = 0; await sleep(500);
+        return { dead:null, out:GRAZE }; }
+      const read = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane);
+      bob.attacks.push(lane); opp.reads.push(read);
+      const out = eng._resolve(bob, lane, read, opp);
+      gutShot(bob, run, lane, out);
+      await freeze(lane, read, true);
+      if (out !== GRAZE) await muzzleFX();
+      if (run){ if (out===KILL && lane===HEAD) deadEye(run, clean); else run.deadeye = 0; }
+      return land(opp, out, bob, lane, read);
+    }
+    // WHOA path — FAN THE HAMMER (the all-in, two-axis: stance from the fan + lane from the kill)
+    if (bob.whoa_spare > 0) bob.whoa_spare--; else bob.whoa_available = false;   // TWO WHOAS
+    const fan = await fanTheHammer();
+    const [rSt, rLane] = opp.ctrl.whoa_read(opp.char, eng.rng);
+    const out = resolveWhoa(fan.stance, fan.lane, rSt, rLane);
+    gutShot(bob, run, fan.lane, out);
+    banner("WHOA!", out===KILL ? "DID YOU SEE THAT?!" : out===MISFIRE ? "the hammer jams — he read it all" : "half — he staggers into your second shot", true); await sleep(600);
+    if (out===KILL){ opp.alive=false; sfx.shot(); dropFoe();
+      if (run){ if (fan.lane===HEAD && fan.clean) deadEye(run, true); else run.deadeye = 0; }
+      return {dead:opp, out:KILL}; }
+    if (run) run.deadeye = 0;
+    if (out===MISFIRE){ sfx.block(); return {dead:null, out:MISFIRE}; }
+    const lane2 = (await askLane("SECOND SHOT —", { timeout: 1200, shoot: true })) || CENTER;   // Bob's DEAD-EYE rebound is guaranteed
+    const read2 = opp.ctrl.defend_read(opp.char, bob.attacks, eng.rng, lane2);
+    bob.attacks.push(lane2); opp.reads.push(read2);
+    const o2 = eng._resolve(bob, lane2, read2, opp);
+    gutShot(bob, run, lane2, o2);
+    await freeze(lane2, read2, true);
+    return land(opp, o2, bob, lane2, read2, true);
+  }
+  // HE drew first: his EYES go somewhere (honest only sometimes); you have a READ WINDOW to guard.
+  const lane = opp.ctrl.attack_lane(opp.char, bob.reads, eng.rng);
+  const tell = eng._tell(opp, lane, bob);
+  drawMan(opp.char, opp.winged, tell === null ? "BLIND" : tell, opp.winged ? "winged_draw" : "draw"); POSE.breathing = false;
+  const cue = shoulderCue(lane, tell, readMs);
+  eyeInsert(tell === null ? null : tell);                          // the Leone close-up: read HIS eyes
+  const read = await askLane(tell === null ? `<span class="lethal">READ HIM</span> — you can't see his eyes`
+                                          : `READ ${PR(opp.char).HIM} — ${PR(opp.char).his} eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: readMs });
+  cue(); eyeInsert(null);
+  bob.reads.push(read); opp.attacks.push(lane);
+  pose("fire"); sfx.shot(); crowdReact("flinch", 700); await sleep(TIMING.firePose);                 // his muzzle flash
+  const out = eng._resolve(opp, lane, read, bob);
+  $("zWING").classList.remove("open");
+  await freeze(lane, read, false);
+  drawMan(opp.char, opp.winged);
+  return land(bob, out, opp, lane, read);
+}
+async function land(reader, out, attacker, lane, read, second=false){
+  const verb = label(attacker.char.weapon, lane);
+  const you = reader.ctrl && reader.ctrl.is_human;          // is the PLAYER the one being struck?
+  const bob = you ? reader : attacker, foe = you ? attacker : reader;
+  $("zWING").classList.remove("open");
+  if (out===WINGED && reader.flesh > 0){                   // FLESH WOUND: just a scratch
+    reader.flesh--; sfx.block(); banner(you ? "JUST A SCRATCH" : "A SCRATCH", "FLESH WOUND — once a stage", true);
+    setLife(bob, POSE.pair || foe); return {dead:null, out:GRAZE};
+  }
+  if (out===KILL || (out===WINGED && reader.winged)){
+    const finished = out===WINGED;
+    reader.alive=false; sfx.shot();
+    if(!you && !POSE.pair){ pose(lane===HEAD ? "hit_head" : "hit_center", "DEAD"); fxAt("blood", 0.5, lane===HEAD ? 0.12 : 0.35); await sleep(TIMING.hitPose); dropFoe(); }
+    else if (!you) { flare(); sfx.roar(); }
+    banner(you ? (finished ? "FINISHED — you're gone" : "YOU'RE DEAD") : (finished ? "FINISHED" : "KILL"), finished ? "winged again" : verb, true);
+    setLife(bob, POSE.pair || foe); return {dead:reader, out:KILL};
+  }
+  if (out===WINGED){
+    sfx.shot();
+    reader.winged=true; sfx.wound();
+    if(!you){ if (!POSE.pair){ drawMan(reader.char, true); woundFX(); fxAt("blood", 0.62, 0.62, 0.7); animate("winged", TIMING.fallFrame); } } else { $("hand").classList.add("hurt"); hand("hurt"); }
+    banner(you?"CRITICAL":"WINGED", you?"you're hit. one more and you're done — your hand won't settle":`${PR(reader.char).he}'ll be back — crippled`);
+    setLife(bob, POSE.pair || foe); return {dead:null, out};
+  }
+  { const q = PR(foe.char); sfx.block(); if (!you && !POSE.pair && spriteFor(POSE.char) && !POSE.winged && spriteFor(POSE.char).states.includes("block")) pose("block"); crowdReact("point", 1400); banner(you?"YOU READ IT":"BLOCKED", you?`${q.his} shot — blocked. ${q.he}'s still out there.`:`${q.he} read it — ${q.he}'s still out there.`); }
+  setLife(bob, POSE.pair || foe); return {dead:null, out:GRAZE};
+}
+
+// THE SEVEN-JOHNS — two men at once (mirrors engine.exchange_pair). One draw, three hands; the fastest
+// acts first. Your turn = one pull per John still standing. A John's turn = his eyes, your read window.
+async function pairExchange(eng, bob, j1, j2, run){
+  drawPair(j1, j2); setLife(bob, [j1, j2]); bob.exposed = false;
+  let t1 = j1.ctrl.reflex(j1.char, eng.rng), t2 = j2.ctrl.reflex(j2.char, eng.rng);
+  const shot = await drawShoot(false);
+  drawPair(j1, j2, null, null, "draw", "draw");
+  let tb = shot.t; if (tb !== Infinity && bob.winged && !bob.perks.has("COLD_NERVE")) tb += WINGED_SLOW;
+  if (tb !== Infinity && bob.perks.has("QUICK_HAND")) tb -= QUICK_HAND_S;
+  if (shot.falseStart){ sfx.shot(); banner("CRACK —", "you fired early. both of them look at you.", true); await sleep(900); }
+  clock(`BOB <b>${fmt(tb)}</b> &nbsp;—&nbsp; JOHN <b>${fmt(t1)}</b> &nbsp;—&nbsp; JOHN <b>${fmt(t2)}</b>`);
+  const order = [[tb,0,bob],[t1,1,j1],[t2,2,j2]].sort((x,y)=> x[0]<y[0]?-1 : x[0]>y[0]?1 : x[1]-y[1]);
+  let firstPull = shot.lane;
+  for (const [, , who] of order){
+    if (who === bob){
+      for (const [j, side] of [[j1,"LEFT"],[j2,"RIGHT"]]){
+        if (!j.alive) continue;
+        let lane = firstPull; firstPull = null;
+        if (!lane) lane = await askLane(`PULL — the <b>${side}</b> JOHN`, { timeout: 900, shoot: true });
+        if (!lane){ banner("WIDE", `the ${side.toLowerCase()} John is still standing`, true); await sleep(400); continue; }
+        const read = j.ctrl.defend_read(j.char, bob.attacks, eng.rng, lane);
+        bob.attacks.push(lane); j.reads.push(read);
+        const out = eng._resolve(bob, lane, read, j);
+        gutShot(bob, run, lane, out);
+        await freeze(lane, read, true); await muzzleFX();
+        if (out===KILL || (out===WINGED && j.winged)){ j.alive=false; sfx.shot(); flare(); sfx.roar(); }
+        else if (out===WINGED){ j.winged=true; sfx.wound(); } else sfx.block();
+        drawPair(j1, j2); setLife(bob, [j1, j2]);
+      }
+    } else if (who.alive){
+      const lane = who.ctrl.attack_lane(who.char, bob.reads, eng.rng);
+      const tell = eng._tell(who, lane, bob);
+      drawPair(j1, j2, who===j1 ? tell : null, who===j2 ? tell : null, who===j1 ? "draw" : null, who===j2 ? "draw" : null);
+      const cue = shoulderCue(lane, tell, 1400);
+      const read = await askLane(`READ the <b>${who===j1?"LEFT":"RIGHT"}</b> JOHN — his eyes: <b>${EYE_WORD[tell]}</b>`, { timeout: 1400 });
+      cue();
+      bob.reads.push(read); who.attacks.push(lane);
+      drawPair(j1, j2, null, null, who===j1 ? "fire" : null, who===j2 ? "fire" : null); sfx.shot(); await sleep(TIMING.firePose);
+      const out = eng._resolve(who, lane, read, bob);
+      await freeze(lane, read, false); drawPair(j1, j2);
+      const r = await land(bob, out, who, lane, read);
+      if (r.dead === bob) return { dead: bob };
+    }
+  }
+  return { dead: null };
+}
+
+// PERKS — after stages 1-3: pick ONE of TWO (pairs measured EVEN — docs/PERKS.md). Mirrors engine.stage_end.
+async function perkPick(bob, si){
+  if (bob.perks.has("SECOND_WIND") && bob.winged){ bob.winged = false; $("hand").classList.remove("hurt"); setLife(bob);
+    await story("SECOND WIND", "he walks it off."); }
+  if (si >= PERK_PAIRS.length) return;
+  const [a, b] = PERK_PAIRS[si];
+  overlay(`<h1>PICK ONE</h1><p class="dim">both even. both help. you only get one.</p>
+    <p><span class="k">1</span> <b class="gold">${PERKS[a][0]}</b> — ${PERKS[a][1]}</p>
+    <p><span class="k">2</span> <b class="gold">${PERKS[b][0]}</b> — ${PERKS[b][1]}</p>`);
+  const pick = await askButtons("", [
+    { id:"bP1", html:PERKS[a][0], val:a, keys:["Digit1","KeyA"] },
+    { id:"bP2", html:PERKS[b][0], val:b, keys:["Digit2","KeyB"] }]);
+  bob.perks.add(pick); hideOverlay(); prompt("");
+  banner("✶ " + PERKS[pick][0], PERKS[pick][1], true); await sleep(900);
+}
+
+// ---- run ----
+const STAGE_MOTIVE = STAGES;
+// ===== LAB: the cold open rebuilt from the Blender story manifest =====
+let LAB_STORY = null;
+if (ART_NEW) await fetch(LAB + "web/story/manifest.json").then(r => r.json()).then(m => { LAB_STORY = m; }).catch(() => {});
+// the throw comes from the crowd, LEFT or RIGHT (Joe 1025: "perhaps it alternates"): ?thrower=L|R|alt (default alt,
+// starting LEFT; the alternation is a per-viewer convenience in localStorage, harmless if storage is blocked)
+function labThrowSide(){ const q = (LQ.get("thrower") || "alt").toUpperCase(); if (q === "L" || q === "R") return q;
+  let n = 0; try { n = +(localStorage.getItem("itywd_lab_throws") || 0); localStorage.setItem("itywd_lab_throws", String(n + 1)); } catch {}
+  return n % 2 === 0 ? "L" : "R"; }
+function labColdOpen(){ if (!LAB_STORY || LQ.get("seq") === "0") return;
+  const o = LQ.get("order"), order = o === "game" ? LAB_STORY.order_game : o === "v1" ? LAB_STORY.order_v1 : LAB_STORY.order_continuity;
+  const side = labThrowSide(); window.__labThrow = side;
+  RIG_SCENES.cold_open = order.map(k => k === "catch" ? (LAB_STORY.beats["catch_" + side] || LAB_STORY.beats.catch) : LAB_STORY.beats[k]).filter(Boolean);
+  for (const [k, beats] of Object.entries(LAB_STORY.scenes || {})) RIG_SCENES[k] = beats; }
+async function play(){
+  labColdOpen();
+  const eng = new Engine(LQ.has("seed") ? +LQ.get("seed") : Math.floor(Math.random()*1e9)); window.__labEng = eng;
+  const bob = new Side(BOB, new HumanCtl());
+  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:2, deadeye:0, deadeyeBest:0, president_dead:false, dishonor:0 };
+  const pool = [];                                   // the men still out there
+  $("hand").classList.remove("hurt"); hand("idle"); showPres(false); setHUD(run); setPoem(0); setLife(bob, null); iris(null); critical(false);
+  await playScene("cold_open");
+
+  for (let si=0; si<STAGE_MOTIVE.length; si++){
+    stageStart(bob); bob.nerve = 1;                  // the all-in once a stage (+ perks)
+    const stageGuts = bob.gut_shots;
+    hideOverlay(); clock("");
+    if (!(si === 0 && LAB_STORY && !LQ.get("order") && LQ.get("seq") !== "0")){ sting('duel'); iris(null);
+    stagePlate(si); await playScene("stage" + (si+1)); } else { stagePlate(si); iris(null); if (LAB_CROWD) crowdReact("watch"); }
+    banner(`STAGE ${si+1}: ${STAGE_MOTIVE[si][0]}`, "he fights " + STAGE_MOTIVE[si][1], true);
+
+    for (let bi=0; bi<DECISIONS_PER_STAGE; bi++){
+      run.surveillance += 1; setHUD(run);
+      bob.lethal_wing = run.legend >= LEGEND_LOUD;
+      let back = null;
+      const opp = beatOpponent(si, bi, pool, (k, a) => { if (k === "returns") back = a.side; });
+      if (back){                                       // I THOUGHT YOU WERE DEAD — a man you left standing walks back in
+        drawMan(back.char, back.winged);
+        await playScene("returns", { name: whoName(back.char), winged: back.winged ? ", arm hanging uselessly." : "." });
+      }
+      let res;
+      if (Array.isArray(opp)){
+        await playScene("johns"); banner("THE SEVEN-JOHNS", "one pull each", true);
+        res = await pairExchange(eng, bob, opp[0], opp[1], run);
+      } else {
+        const boss = isBossChar(opp.char);
+        banner(whoName(opp.char), boss ? (BOSS_TELL[opp.char.name] || "BOSS") : whoLine(opp.char), true);
+        res = await exchange(eng, bob, opp, run);
+        if (res.dead !== bob && opp.alive){ pool.push(opp); }
+      }
+      clearZones();
+      if (res.dead === bob){ return end(run, `DIED — ${STAGE_MOTIVE[si][0]}, beat ${bi+1}`, eng); }
+      run.cleared += 1; run.score += beatScore(si, opp); setPoem(run.cleared); setHUD(run);
+      await sleep(TIMING.bannerBeat); iris(null);
+      await playScene("camera");                        // the lens turns toward Bob
+      if (await askYesNo(`<span class="gold">DID YOU SEE THAT?</span> put it on the record?`)){
+        run.legend += 1; run.surveillance += 1;
+        run.score += (run.dishonor||0) < DISHONOR_SHAMED ? SCORE_ON_RECORD : Math.floor(SCORE_ON_RECORD/2); setHUD(run);
+      }
+    }
+    if (si===0){ await playScene("wound"); }
+    if (si===1 && await thePresident(eng, bob, run)) return end(run, "DIED — THE PRESIDENT'S MAN", eng);
+    if (si===2 && run.president_dead && await heyBobSmile(eng, bob, run)) return end(run, "DIED — HEY BOB, SMILE!", eng);
+    if (si < STAGE_MOTIVE.length-1){
+      if (run.anders_scrubs>0 && run.surveillance>0){ run.anders_scrubs--; run.surveillance=Math.max(0,run.surveillance-3); setHUD(run);
+        await playScene("anders"); }
+      if (bob.gut_shots === stageGuts){
+        run.score += BONUS_BASE[si]; setHUD(run);
+        coinRain(); sfx.coins(); flare();
+        await story("✶ BONUS ✶", `the crowd throws coins — <span class="gold">+${BONUS_BASE[si]}</span>`);
+      } else await story("NO COINS", `silence. <span class="lethal">nobody throws a coin for a gut shot.</span>`);
+    }
+    await perkPick(bob, si);                         // SECOND WIND heals; then 1 of 2 perks
+  }
+  run.score += SCORE_REACH_TABLE; setHUD(run);
+  return couplet(eng, bob, run);
+}
+
+// THE PRESIDENT — two fights. His security draws on Bob; the President stands beside him for the cameras.
+// Win the draw and the shot is yours: his man — or HIM (click him / P). Shoot him and he DIES on the broadcast.
+async function thePresident(eng, bob, run){
+  hideOverlay(); clock(""); iris(null);
+  sting('pres'); await playScene("president");
+  const president = new Side(PRESIDENT, new AIController());
+  const whoa = bob.whoa_available; bob.whoa_available = false;
+  bob.lethal_wing = run.legend >= LEGEND_LOUD;
+  showPres(true);
+  for (let i=0;i<2;i++){
+    const guard = new Side(PRESIDENTS_MAN, new AIController());
+    banner(guard.char.name, president.alive ? "the President stands right there. you could." : "the President is dead. his man isn't.", true);
+    const res = await exchange(eng, bob, guard, run, { alt: president.alive ? president : null });
+    clearZones();
+    if (res.dead === bob){ showPres(false); bob.whoa_available = whoa; return true; }
+    if (res.dead === president){ run.president_dead = true; run.legend += 3; run.score += SCORE_PRESIDENT; setHUD(run);
+      await playScene("president_dead"); }
+    else if (!guard.alive) { run.score += Math.floor(SCORE_DUEL[1]/2); setHUD(run); }
+  }
+  showPres(false); bob.whoa_available = whoa;
+  if (!run.president_dead){ run.surveillance=Math.max(0,run.surveillance-2); setHUD(run);
+    await playScene("president_held"); }
+  return false;
+}
+
+// HEY BOB, SMILE! — no stage card, no warning. A camera. A flash. The one man who understands that
+// Bob survives by LOOKING: he takes the draw, and there is nothing to read. Read through the afterimage.
+async function heyBobSmile(eng, bob, run){
+  hideOverlay(); clock(""); prompt(""); iris(null);
+  const shooter = new Side(PHOTOGRAPHER, new AIController());
+  drawMan(shooter.char, false, null, "idleA");       // a camera where his face should be — no stage card, no warning
+  banner("HEY BOB —", "", true); await sleep(750);
+  pose("flash"); banner("SMILE!", "", true); sfx.flash(); fxAt("flashbulb", 0.5, 0.12, 2.2);
+  const w = $("whiteout"); w.classList.remove("pop"); void w.offsetWidth; w.classList.add("pop");
+  bob.lethal_wing = run.legend >= LEGEND_LOUD;
+  $("man").classList.add("burn");
+  const res = await exchange(eng, bob, shooter, run, { first: shooter, readMs: TIMING.readWindowSmile });
+  $("man").classList.remove("burn"); w.classList.remove("pop");
+  return res.dead === bob;
+}
+
+// THE BUTTON FLIPS — all game YOU pressed "DID YOU SEE THAT?" to bank legend; now the crowd
+// presses it AT Bob, his own legend (run.legend) become the count against the man. Show-don't-tell
+// of the whole game's thesis. Presentation only — reads run.legend, changes nothing.
+async function crowdFlip(run){
+  const presses = Math.max(3, Math.min(13, run.legend || 0));   // his legend, turned on him (min 3 even if he kept quiet)
+  const BTN = lit => `      ╔═══════════════════════╗
+      ║   DID YOU SEE THAT?    ║
+      ║   ${lit ? "█████  PRESSED  █████" : "·  on the record  ·  "}   ║
+      ╚═══════════════════════╝`;
+  const lead = (run.legend||0) > 0
+    ? `all game, <span class="gold">you</span> pressed it — every kill on the record.`
+    : `you kept it quiet. it didn't matter — <span class="gold">the city saw every one.</span>`;
+  const o = overlay(`<h1 class="lethal">THE BUTTON FLIPS</h1>
+    <p>${lead}</p><p class="dim">now the crowd presses it. <b>at you.</b></p>
+    <pre id="flipbtn">${BTN(false)}</pre><div id="flipcount" class="dim"></div>`);
+  o.className = "show"; await sleep(950);
+  for (let i=1;i<=presses;i++){
+    const b = $("flipbtn"); b.textContent = BTN(true); b.classList.remove("mash"); void b.offsetWidth; b.classList.add("mash");
+    $("flipcount").innerHTML = `<span class="lethal">DID YOU SEE THAT?!</span> &nbsp; ×${i}`;
+    sfx.shot(); flare();
+    await sleep(Math.max(95, 300 - i*16));                       // accelerando — the chant speeds up
+    b.textContent = BTN(false); b.classList.remove("mash");
+    await sleep(Math.max(45, 110 - i*5));
+  }
+  $("flipcount").innerHTML = `<span class="lethal">the legend you built — <b>${presses}</b> counts against the man.</span>`;
+  await sleep(1100); hideOverlay();
+}
+// MY LAST RITES — RUSSIAN ROULETTE (mirrors engine.roulette). Your record LOADS the cylinder, side by
+// side, where you can see it: a quiet man 1 bullet, a legend 3. They spin it; you pull. If it clicks:
+// SPIN again, or fire the NEXT chamber. 1 bullet → spin (1/6 vs 1/5). 3 bullets → don't (1/3 vs 3/6).
+// the spin — the loaded pattern rotates past the hammer (visual only; the engine picks the chamber)
+async function spinCylinder(bullets){
+  for (let i=0;i<TIMING.cylinderSpins;i++){
+    const off = i % CHAMBERS; let h = "";
+    for (let c=0;c<CHAMBERS;c++){ const live = ((c + off) % CHAMBERS) < bullets; h += `<span class="${live?"live":"empty"}">${live?"●":"○"}</span>`; }
+    overlay(`<h1>they spin it</h1><div class="cyl">( ${h} )</div><p class="dim">▲ the hammer</p>`);
+    sfx.hammer(); await sleep(TIMING.cylinderTick + i*6);
+  }
+}
+function cylinder(bullets, firedPos=null){
+  let h = "";
+  for (let c=0;c<CHAMBERS;c++){
+    const live = c < bullets, cls = c===firedPos ? "fired" : live ? "live" : "empty";
+    h += `<span class="${cls}">${live ? "●" : "○"}</span>`;
+  }
+  return `<div class="cyl">( ${h} )</div>`;
+}
+async function couplet(eng, bob, run){
+  hideOverlay(); clock("");
+  banner("MY LAST RITES", "the chamber — the one duel DEAD-EYE can't win", true);
+  await crowdFlip(run);
+  const bullets = bulletsFor(run.legend);
+  const lead = bullets === 1 ? "a quiet man. <b>one</b> in the chamber." : `a legend. <span class="lethal"><b>three</b>, side by side.</span>`;
+  overlay(`<h1>THE CHAMBER</h1><p>${lead}</p>${cylinder(bullets)}<p class="dim">they load it where you can see it. they spin it. they hand it to you.</p><div class="start">pull — press any key</div>`);
+  await nextKey(()=>true);
+  await spinCylinder(bullets);
+  const chambers = [0,1,2,3,4,5];
+  let pos = eng.rng.choice(chambers);
+  let alive = pos >= bullets;
+  sfx.hammer();
+  if (alive){
+    overlay(`<h1>— click.</h1>${cylinder(bullets)}<p>empty. one more.</p><p class="dim">spin it again — or fire the <b>next</b> chamber?</p>`);
+    await sleep(500);
+    const spin = await askButtons("", [
+      { id:"bS", html:"SPIN", val:true,  keys:["KeyS"] },
+      { id:"bX", html:"NEXT CHAMBER", val:false, keys:["KeyN","KeyX"] }]);
+    if (spin) await spinCylinder(bullets);
+    pos = spin ? eng.rng.choice(chambers) : (pos + 1) % CHAMBERS;
+    overlay(`<h1>${spin ? "he spins it." : "the next chamber."}</h1>${cylinder(bullets)}<p class="dim">…</p>`);
+    await sleep(1100); sfx.hammer();
+    alive = pos >= bullets;
+  }
+  prompt("");
+  const alone = alive && (run.dishonor||0) >= DISHONOR_SHAMED;       // she saw the gut shots. nobody is waiting
+  if (alive && !alone){ sfx.block(); await playScene("the_man"); }
+  else if (alone){ sfx.block(); await playScene("the_man_alone"); }
+  else { sfx.shot(); flare(); await playScene("the_chamber"); }
+  run.cleared += 2; setPoem(run.cleared);
+  const ending = alone ? "THE MAN, ALONE" : alive ? "THE MAN" : "THE CHAMBER";
+  run.score += ending==="THE MAN, ALONE" ? SCORE_THE_MAN_ALONE : ending==="THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER; setHUD(run);
+  return end(run, ending, eng);
+}
+
+// human controller stub so opp code paths that call bob.ctrl never run during human turns
+class HumanCtl{ get is_human(){return true;} reflex(){return 0;} bites(){return false;} pick_target(){return false;} spin_again(){return false;} }
+
+// CUTSCENES (rig.mjs SCENES) — timed ASCII beats; any key skips a beat after TIMING.sceneMinBeforeSkip.
+// Each beat maps 1:1 to a painted still later. {name}/{winged} fill from vars.
+const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function holdOrSkip(ms){
+  return new Promise(res => {
+    const t0 = performance.now();
+    const done = () => { clearTimeout(t); window.removeEventListener("keydown", k); window.removeEventListener("pointerdown", k); res(); };
+    const k = () => { if (performance.now() - t0 >= TIMING.sceneMinBeforeSkip) done(); };
+    const t = setTimeout(done, ms);
+    window.addEventListener("keydown", k); window.addEventListener("pointerdown", k);
+  });
+}
+async function playScene(name, vars={}){
+  const beats = RIG_SCENES[name]; if (!beats) return;
+  const fill = t => esc(t || "").replace(/\{(\w+)\}/g, (_, v) => esc(vars[v] ?? ""));
+  for (const b of beats){
+    const still = b.seq ? seqHTML(b.seq) : b.stage ? stageHTML(b.stage)
+      : b.img ? `<img class="still" src="${b.img}" alt="" onerror="const p=this.nextElementSibling; if(p) p.hidden=false; this.remove()">` : "";
+    const o = overlay(`${b.flash ? `<i class="flash ${b.flash}"></i>` : ""}${still}${b.art ? `<pre class="scene"${(b.img || b.stage) ? " hidden" : ""}>${esc(b.art)}</pre>` : ""}${b.h ? `<h1 class="${b.cls||""}">${fill(b.h)}</h1>` : ""}${b.text ? `<p>${fill(b.text)}</p>` : ""}`);
+    o.className = "show attract";
+    const _sq = b.seq ? playSeq(o, b.seq) : null;
+    await holdOrSkip(b.ms); if (_sq) _sq();
+  }
+  hideOverlay();
+}
+function seqHTML(q){ return `<div class="stage"><img class="seqimg" src="${LAB}${q.dir}/f0000.${q.ext || "jpg"}" alt=""></div>`; }
+function playSeq(o, q){ const img = o.querySelector("img.seqimg"); if (!img) return null; let i = 0;
+  const t = setInterval(() => { i++; if (i >= q.n){ clearInterval(t); return; } img.src = `${LAB}${q.dir}/f${String(i).padStart(4,"0")}.${q.ext || "jpg"}`; }, 1000 / (q.fps || 12));
+  return () => clearInterval(t); }
+// a layered shot: the plate pushes in slowly; each cutout stands on it (feet at y% up from the bottom)
+function stageHTML(st){
+  const L = (st.layers || []).map((l, k) => `<img class="lay ${l.fx||""}" src="${l.src}" alt="" style="left:${l.x}%; bottom:${l.y}%; height:${l.h}%; z-index:${k+1}">`).join("");
+  return `<div class="stage"><img class="plate${st.dim ? " dim" : ""}" src="${st.plate}" alt="">${L}</div>`;
+}
+Object.values(RIG_SCENES).flat().forEach(b => {                                    // preload the stills + layers
+  [b.img, b.stage && b.stage.plate, ...((b.stage && b.stage.layers) || []).map(l => l.src)].filter(Boolean).forEach(src => { const i = new Image(); i.src = src; }); });
+window.__rig = { playScene, frame, SCENES: RIG_SCENES, TIMING, critical: on => critical(on) };
+async function story(title, body){ const o=overlay(`<h1>${title}</h1><p>${body}</p><div class="start">press any key</div>`); await nextKey(()=>true); hideOverlay(); }
+
+async function end(run, ending, eng){ if (/^DIED/.test(ending)) crowdReact("scatter");
+  clearZones(); iris(null); POSE.breathing = false; critical(false);
+  if (ending.startsWith("DIED")) await playScene("died", { name: ending.replace(/^DIED — /, "") });
+  const man = ending==="THE MAN";
+  const txt = ending.startsWith("DIED")
+    ? `<p>${ending}.<br>an <span class="gold">unfinished sonnet</span>.</p><p class="dim">"I ain't the main story. Just the last guy left in the prologue."</p>`
+    : ending==="THE MAN, ALONE" ? `<p>he walks out of the chamber.<br>she saw the gut shots. <span class="lethal">nobody is waiting.</span></p><p class="dim">"You didn't survive Detroit. You just outlasted your version of it."</p>`
+    : man ? `<p>she pulls him from the chamber.<br>back to <span class="gold">frame one</span> — the kitchen.</p><p class="dim">"You didn't survive Detroit. You just outlasted your version of it."</p>`
+          : `<p>the crowd got its count.<br><span class="lethal">the man is gone.</span></p>`;
+  const board = saveScore(run.score, run.cleared);
+  const rows = board.slice(0,7).map((b,i)=> `<div class="${b.you?'you':''}">${String(i+1).padStart(2)}. ${b.ini.padEnd(3)} ${String(b.s).padStart(7)}  ${b.c}/${SONNET_LENGTH}${b.you?'  ◀ YOU':''}</div>`).join("");
+  overlay(`<h1>${ending.startsWith("DIED")?"DIED":ending}</h1>${txt}
+    <div class="dim">THE RUN: ${run.cleared}/${SONNET_LENGTH} · SCORE ${run.score.toLocaleString()} · LEGEND ${run.legend}</div>
+    <div id="board">${rows}</div>
+    <div class="start">press any key — drop a quarter, you're back</div>`);
+  await nextKey(()=>true);
+  boot();
+}
+
+// ---- leaderboard (localStorage) ----
+const DEFAULTS = [{s:12200,ini:"SNK",c:14},{s:9100,ini:"POM",c:14},{s:6600,ini:"A&P",c:12},{s:4200,ini:"WIF",c:8},{s:1900,ini:"BOB",c:3}];
+function loadScores(){ try{ return JSON.parse(localStorage.getItem("itywd")||"null") || DEFAULTS.slice(); }catch{ return DEFAULTS.slice(); } }
+function saveScore(s, c){
+  let b = loadScores().map(x=>({...x, you:false}));
+  const me = {s, ini:"BOB", c, you:true};
+  b.push(me); b.sort((x,y)=>y.s-x.s); b = b.slice(0,20);
+  try{ localStorage.setItem("itywd", JSON.stringify(b.map(({you,...r})=>r))); }catch{}
+  return b;
+}
+
+// ---- ATTRACT: the trailer, cut to DEAD-EYE (Cleveland Bob's Theme) ----
+const AUDIO = new Audio("deadeye.mp3"); AUDIO.preload = "auto"; AUDIO.loop = true;
+const TRACK = 176.8, DROP = 169.0;          // the slow positive part drops off at ~169
+const ov = $("overlay");
+function scene(cls, html){ ov.className = "show " + cls; ov.innerHTML = html; }
+
+// the story reel — trailer voice ("IN A WORLD…/ONE MAN…"), keyed to the music (seconds).
+const SCENES = [
+  [0,   `<div class="credit">. . .  DEAD-EYE  . . .</div>`],
+  [6,   `<p class="dim">FRAME ONE</p><h1 class="warm">a kitchen. morning light.</h1><p class="dim">coffee. his wife. an ordinary morning for an Anders &amp; Partners man.<br>this is the peak. it never gets better.</p>`],
+  [15,  `<h1>IN A WORLD —</h1><p>where the civil war was lost. Detroit didn't surrender.</p><p class="dim">now it's the last city they don't control — before the Algorithm gets overwritten by God.</p>`],
+  [23,  `<p>…where the money isn't worth the paper it's printed on,</p><p class="dim">and the only ledger left is the body count…</p>`],
+  [31,  `<h1>ONE MAN —</h1><p class="dim">a husband. an accountant. a nobody.</p>`],
+  [38,  `<h1 class="blood">finds he is the deadliest hand alive.</h1><p class="dim">one mismatch. KILL. he didn't even try.</p>`],
+  [45,  `<h1 class="lethal">"DID YOU SEE THAT?!"</h1><p class="dim">the city says it first. already the wrong man. they call him "CLEVELAND."</p>`],
+  [51,  `<p>he survives by being the read no one can call.</p><h1 class="gold">they call it DEAD-EYE.</h1><p class="dim">it looks like luck. it plays like fate.</p>`],
+  [58,  `<p class="dim">he fought for his family. then just to eat.</p><p>every kill: more legend, and less Bob.</p>`],
+  [64,  `<p>the record climbs the mythstream —</p><p class="dim">all the way to the top.</p>`],
+  [70,  `<h1>THE PRESIDENT OF MICHIGAN</h1><p>"Don't kill him, Bob. Just… let them see it."</p>`],
+  [77,  `<p>BOB: "…and if I don't?"</p><p class="dim">"Then you're only a man, Bob. And a man can die."</p>`],
+  [84,  `<h1 class="blood">he goes on the record.</h1><p>and the legend devours what's left of the man.</p>`],
+  [92,  `<h1>ANDERS &amp; PARTNERS</h1><p>"We're sorry, Bob. We're dying slowly.<br>You're living in the moment."</p>`],
+  [100, `<p>no reason left now but the count.</p><h1 class="gold">THE COUNT</h1>`],
+  [108, `<p class="dim">kill.&nbsp;&nbsp;&nbsp;kill.</p><p>how far is he from that kitchen now?</p>`],
+  [116, `<p class="dim">the man Bob was is already dead.</p><p>only the legend keeps walking.</p>`],
+  [124, `<h1 class="lethal">how lost can a good man get?</h1>`],
+  [132, `<p class="dim">.&nbsp;&nbsp;.&nbsp;&nbsp;.</p>`],
+  [145, `<p class="warm">somewhere, a kitchen. a chair pushed out. coffee gone cold.</p>`],
+  [152, `<h1 class="warm">the only way home…</h1><p class="dim">is to stop being the legend. but the record is forever.</p>`],
+  [159, `<p>one last fight. no skill left.</p><p class="dim">the one duel DEAD-EYE cannot win.</p>`],
+  [164, `<p class="dim">and the crowd is already shouting his name…</p>`],
+];
+
+// the drop-off: hard choices, horrible kills in succession — how lost he is.
+const KILLS = ["HEAD.", "CHEST.", "DOWN.", "ANOTHER.", "NO REASON.", "FOR THE COUNT.",
+  "WINGED — FINISHED.", "AGAIN.", "AGAIN.", "WHO WAS THAT?", "DOES IT MATTER?", "HE CAN'T STOP."];
+const ROULETTE = `      _____
+     /     \\
+    | (•)   |======   one in the chamber.
+     \\_____/
+   MY  LAST  RITES`;
+const TITLE = `<h1 class="endtitle">I THOUGHT YOU WERE DEAD!</h1>
+  <div class="credit">a CLEVELAND BOB story</div>
+  <div class="dim">drop a quarter. die a legend.</div>
+  <div class="start">press any key</div>`;
+
+function sceneKey(t) {
+  if (t >= DROP) {
+    if (t < 174.5) return "k" + Math.floor((t - DROP) / 0.42);   // ~13 kill flashes
+    if (t < 175.6) return "roulette";
+    return "title";
+  }
+  let i = 0; for (let k = 0; k < SCENES.length; k++) { if (t >= SCENES[k][0]) i = k; else break; }
+  return "s" + i;
+}
+let LAB_ATTRACT = {}, _bgT = 0;
+const LAB_ATTRACT_P = ART_NEW ? fetch(LAB + "web/attract/attract.json").then(r => r.json()).then(m => { LAB_ATTRACT = m; }).catch(() => {}) : Promise.resolve();
+// a menu card's background, once attract.json is in (the boot card is drawn before the fetch lands - it used to come up
+// BLACK because LAB_ATTRACT was still empty), and only if that same card is still on screen
+function labMenuBg(key, mark){ const o = $("overlay"); LAB_ATTRACT_P.then(() => {
+  if (o.textContent.includes(mark) && !o.querySelector(".atbg")) labBg(o, LAB_ATTRACT[key]); }); }
+// a LIVE background in the overlay: a Blender loop (on twos; ping-pong or once) or a still, behind the words
+function labBg(o, e){ clearInterval(_bgT); o.classList.toggle("live", !!e); if (!e) return;
+  const img = document.createElement("img"); img.className = "atbg"; img.alt = ""; o.prepend(img);
+  if (e.img){ img.src = LAB + e.img; return; }
+  let i = 0, d = 1; const f = k => `${LAB}${e.seq}/f${String(k).padStart(4, "0")}.${e.ext}`; img.src = f(0);
+  _bgT = setInterval(() => { if (!img.isConnected){ clearInterval(_bgT); return; }
+    if (e.mode === "once"){ if (i < e.n - 1) img.src = f(++i); return; }
+    i += d; if (i >= e.n - 1 || i <= 0) d = -d; img.src = f(Math.max(0, Math.min(e.n - 1, i))); }, 1000 / (e.fps || 12)); }
+function labPlate(key){ labBg(ov, LAB_ATTRACT[key]); }
+function renderScene(key) {
+  if (key[0] === "s") scene("attract", SCENES[+key.slice(1)][1]);
+  else if (key[0] === "k") scene("cut", `<div class="kill">${KILLS[+key.slice(1) % KILLS.length]}</div><div class="killsub">the count climbs</div>`);
+  else if (key === "roulette") scene("roulette flashwhite", `<pre class="roul">${ROULETTE}</pre>`);
+  else scene("attract", TITLE);
+  labPlate(key);
+}
+window.__scene = renderScene;   // dev/test hook: preview any attract frame (used by capture/smoke)
+
+let attractOn = false;
+function attract() {
+  attractOn = true;
+  try { AUDIO.currentTime = 0; } catch {}
+  AUDIO.play().catch(() => {});                    // unlocked by the boot keypress gesture
+  const t0 = performance.now();
+  let last = null;
+  const tick = () => {
+    if (!attractOn) return;
+    const t = AUDIO.paused ? ((performance.now() - t0) / 1000) % TRACK : AUDIO.currentTime;  // music clock, wall-clock fallback
+    const key = sceneKey(t);
+    if (key !== last) { last = key; renderScene(key); }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  nextKey(() => true).then(() => { attractOn = false; try { AUDIO.pause(); AUDIO.currentTime = 0; } catch {} startGame(); });
+}
+
+// ======================================================================================
+// 2 PLAYERS — THE TOURNAMENT. P1 is Bob; P2 steps into each gunman/gunwoman of the lineup in turn.
+// Mirrors engine.tournament(): a bout = up to BOUT_EXCHANGES exchanges (or BANGKOK: make-or-die volleys);
+// every exchange P2's gunman SURVIVES earns P2 a perk for that gunman (1 of 2, max 2). Then SWAP SEATS and
+// play again — whoever's Bob gets further wins. Picks are HIDDEN keypresses, so one screen is fair.
+//   BOB's seat:     draw ⇧ Left-Shift · aim/guard W S X · feint Q
+//   GUNMAN's seat:  draw ⇧ Right-Shift or Enter · aim/guard I K M · feint U
+// (the Seven-Johns: the gunman's seat plays BOTH on one draw — one hand, two guns)
+// ======================================================================================
+const SEATS = [
+  { name:"P1", draw:["ShiftLeft"], lanes:{ KeyW:HEAD, KeyS:CENTER, KeyX:WING }, feint:"KeyQ", keysTxt:"⇧L draw · W S X · Q feint" },
+  { name:"P2", draw:["ShiftRight","Enter"], lanes:{ KeyI:HEAD, KeyK:CENTER, KeyM:WING }, feint:"KeyU", keysTxt:"⇧R/Enter draw · I K M · U feint" },
+];
+function p2show(on){ $("p2view").classList.toggle("on", on); }
+function p2draw(gunName, gunPron, eyes, cue=""){
+  $("p2who").textContent = `${gunName} — the gunman's seat${gunPron==="she" ? " (she)" : ""}`;
+  $("p2art").textContent = bobFrame(eyes); $("p2cue").textContent = cue;
+}
+// one hidden lane pick from a seat within ms (null = no pick). Shows only "LOCKED".
+function hiddenLane(seat, ms, label){
+  return new Promise(res => {
+    const done = v => { window.removeEventListener("keydown", kd); clearTimeout(t); res(v); };
+    const kd = e => { if (e.code in seat.lanes){ e.preventDefault(); done(seat.lanes[e.code]); } };
+    window.addEventListener("keydown", kd); const t = setTimeout(() => done(null), ms);
+    if (label) prompt(label);
+  });
+}
+// both seats pick at once (Bangkok): each seat's FIRST lane key = where it fires, SECOND = where it guards.
+function hiddenVolley(ms){
+  return new Promise(res => {
+    const picks = [[], []];
+    const kd = e => { SEATS.forEach((st, i) => { if (e.code in st.lanes && picks[i].length < 2){ e.preventDefault(); picks[i].push(st.lanes[e.code]);
+      prompt(`BANGKOK — P1 <span class="locked">${"●".repeat(picks[0].length)}</span> · P2 <span class="locked">${"●".repeat(picks[1].length)}</span>`); } });
+      if (picks[0].length === 2 && picks[1].length === 2) done(); };
+    const done = () => { window.removeEventListener("keydown", kd); clearTimeout(t); res(picks); };
+    window.addEventListener("keydown", kd); const t = setTimeout(done, ms);
+  });
+}
+// THE DRAW RACE between two humans. Early draw during steady = FALSE START (unless COLD NERVE forgives it).
+// A feint (Q/U) twitches the feinter's body; if the OTHER seat then jumps early, it bit — else the feinter
+// pays: FEINT_COST slower and OPEN LOW. Returns times (s) for [bob, gun].
+async function twoDraw(bob, gun, seatB, seatG){
+  prompt(`<small>steady…</small> &nbsp; <small>${seatB.name} ${seatB.keysTxt} &nbsp;|&nbsp; ${seatG.name} ${seatG.keysTxt}</small>`);
+  iris("tight"); POSE.breathing = true; clock("");
+  const wait = TIMING.steadyMin + Math.random()*TIMING.steadyRand, t0w = performance.now();
+  const sides = [bob, gun], seats = [seatB, seatG];
+  const st = [{ early:false, t:null, feint:null, nerve: sides[0].perks.has("COLD_NERVE") ? 1 : 0 },
+              { early:false, t:null, feint:null, nerve: sides[1].perks.has("COLD_NERVE") ? 1 : 0 }];
+  let phase = "steady", tDraw = 0;
+  const kd = e => {
+    seats.forEach((seat, i) => {
+      if (seat.draw.includes(e.code)){ e.preventDefault();
+        if (phase === "steady"){ if (st[i].nerve){ st[i].nerve--; banner("COLD NERVE", `${seat.name}'s hand stays`, true); return; }
+          st[i].early = true; const o = 1-i; if (st[o].feint === "pending") st[o].feint = "bit"; }
+        else if (st[i].t === null) st[i].t = (performance.now() - tDraw)/1000; }
+      if (e.code === seat.feint && phase === "steady" && !st[i].feint){
+        st[i].feint = "pending"; sfx.twitch();
+        if (i === 1){ const was = POSE.state; pose("twitch"); setTimeout(() => { if (POSE.state === "twitch") pose(was === "twitch" ? "idleA" : was); }, TIMING.twitch); }
+        else { hand("feint"); setTimeout(() => hand("idle"), TIMING.twitch*2); }
+      }
+    });
+  };
+  window.addEventListener("keydown", kd);
+  while (phase === "steady" && performance.now()-t0w < wait && !st[0].early && !st[1].early) await sleep(16);
+  phase = "draw"; POSE.breathing = false; iris("open");
+  if (!st[0].early && !st[1].early){
+    tDraw = performance.now(); pose(gun.winged ? "winged_draw" : "draw"); hand("aim");
+    prompt(`<span class="big gold">DRAW!</span>`);
+    while ((st[0].t === null || st[1].t === null) && performance.now()-tDraw < TIMING.drawTimeout) await sleep(8);
+  }
+  window.removeEventListener("keydown", kd);
+  const T = st.map((x, i) => {
+    if (x.early) return Infinity;
+    let t = x.t === null ? 9 : x.t;
+    if (sides[i].winged && !sides[i].perks.has("COLD_NERVE")) t += WINGED_SLOW;
+    if (sides[i].perks.has("QUICK_HAND")) t -= QUICK_HAND_S;
+    return t;
+  });
+  st.forEach((x, i) => {                                     // feints resolve: bit → the other false-started
+    if (x.feint === "bit") T[1-i] = Infinity;
+    else if (x.feint === "pending" && T[i] !== Infinity){ if (!sides[i].perks.has("SELL_IT")) T[i] += FEINT_COST; sides[i].exposed = true; if (i===0) $("zWING").classList.add("open"); }
+  });
+  if (st[0].early || st[1].early){ sfx.shot(); banner("CRACK —", `${st[0].early ? seatB.name : seatG.name} fired early. into the dirt.`, true); await sleep(TIMING.falseStartCrack); }
+  clock(`BOB <b>${fmt(T[0])}</b> &nbsp;—&nbsp; ${whoName(gun.char)} <b>${fmt(T[1])}</b>`);
+  return T;
+}
+// one exchange, two humans. Returns the side that died (or null).
+async function twoExchange(eng, bob, gun, seatB, seatG){
+  bob.exposed = gun.exposed = false;
+  drawMan(gun.char, gun.winged); p2draw(whoName(gun.char), gun.char.pron, null); setLife(bob, gun);
+  const [tb, tg] = await twoDraw(bob, gun, seatB, seatG);
+  const bobFirst = tb <= tg;
+  const attacker = bobFirst ? bob : gun, reader = bobFirst ? gun : bob;
+  const aSeat = bobFirst ? seatB : seatG, rSeat = bobFirst ? seatG : seatB;
+  banner(bobFirst ? "BOB IS FIRST" : `${whoName(gun.char)} IS FIRST`, `${aSeat.name} aims — ${rSeat.name} reads`, true);
+  const lane = await hiddenLane(aSeat, 1300, `${aSeat.name}: <b>aim</b> (hidden) &nbsp; <small>${aSeat.keysTxt}</small>`);
+  if (!lane){ banner("WIDE", `${aSeat.name} never picked a lane`, true); await sleep(TIMING.freeze); $("zWING").classList.remove("open"); return null; }
+  prompt(`${aSeat.name} <span class="locked">LOCKED</span>`);
+  const tell = eng._tell(attacker, lane, reader);
+  if (bobFirst) p2draw(whoName(gun.char), gun.char.pron, tell, `Bob's eyes: ${EYE_WORD[tell] || "—"}`);
+  else drawMan(gun.char, gun.winged, tell, gun.winged ? "winged_draw" : "draw");
+  // the honest shoulder, late
+  const cueT = setTimeout(() => { if (bobFirst) $("p2cue").textContent += `  ·  ◄══ his arm: ${EYE_WORD[lane]}`;
+    else { const z = $("z"+lane); z.classList.add("shoulder"); } sfx.twitch(); }, TIMING.readWindow*TIMING.shoulderAt);
+  const read = await hiddenLane(rSeat, TIMING.readWindow, `${rSeat.name}: <b>guard</b> (hidden) — watch the eyes, then the shoulder`);
+  clearTimeout(cueT); LANES.forEach(l => $("z"+l).classList.remove("shoulder"));
+  attacker.attacks.push(lane); reader.reads.push(read);
+  if (!bobFirst){ pose("fire"); } sfx.shot(); await sleep(TIMING.firePose);
+  const out = eng._resolve(attacker, lane, read, reader);
+  await freeze(lane, read, bobFirst);
+  const died = eng._land(reader, out);
+  $("zWING").classList.remove("open");
+  if (died){ if (reader === gun) dropFoe(); banner(reader === bob ? "BOB IS DOWN" : "KILL", `${aSeat.name} → ${lane} · ${rSeat.name} guarded ${read || "nothing"}`, true); }
+  else if (out === WINGED){ sfx.wound(); banner(reader === bob ? "BOB — CRITICAL" : "WINGED", "one more and it's over", true); if (reader === gun) drawMan(gun.char, true); }
+  else banner(out === GRAZE && read === lane ? "READ" : "A SCRATCH", "still standing", true);
+  setLife(bob, gun); await sleep(TIMING.freeze);
+  return died ? reader : null;
+}
+// one Bangkok volley, two humans: both fire AND guard at once (hidden). Returns [bobDied, gunDied].
+async function twoVolley(eng, bob, gun){
+  drawMan(gun.char, gun.winged); p2draw(whoName(gun.char), gun.char.pron, null); setLife(bob, gun);
+  for (const c of ["3","2","1"]){ banner("BANGKOK RULES", c, true); await sleep(420); }
+  banner("BANG!", "fire, then guard — both at once (hidden)", true);
+  const [pb, pg] = await hiddenVolley(1800);
+  const [bF, bG] = [pb[0] || null, pb[1] || null], [gF, gG] = [pg[0] || null, pg[1] || null];
+  bob.attacks.push(bF); bob.reads.push(bG); gun.attacks.push(gF); gun.reads.push(gG);
+  const outB = bF ? eng._resolve(bob, bF, gG, gun) : GRAZE;
+  const outG = gF ? eng._resolve(gun, gF, bG, bob) : GRAZE;
+  const gunDied = bF ? eng._land(gun, outB) : false;
+  const bobDied = gF ? eng._land(bob, outG) : false;
+  sfx.shot(); sfx.shot();
+  banner(bobDied && gunDied ? "BOTH SHOTS LAND — the house wins" : bobDied ? "BOB IS DOWN" : gunDied ? "KILL" : "BOTH STANDING",
+    `P1 fired ${bF||"—"} guarded ${bG||"—"} · P2 fired ${gF||"—"} guarded ${gG||"—"}`, true);
+  if (gunDied) dropFoe(); setLife(bob, gun); await sleep(1400);
+  return [bobDied, gunDied];
+}
+// P2's gunman survived: pick 1 of 2 for this gunman (mirrors engine.gunman_perk)
+async function twoGunmanPerk(gun, seatG){
+  const k = gun.perks.size; if (k >= GUNMAN_PERK_PAIRS.length) return;
+  const [a, b] = GUNMAN_PERK_PAIRS[k];
+  overlay(`<h1>${seatG.name} — ${whoName(gun.char)} SURVIVED</h1><p class="dim">pick one for this gunman</p>
+    <p><span class="k">1</span> <b class="gold">${PERKS[a][0]}</b> — ${PERKS[a][1]}</p><p><span class="k">2</span> <b class="gold">${PERKS[b][0]}</b> — ${PERKS[b][1]}</p>`);
+  const pick = await askButtons("", [{ id:"bG1", html:PERKS[a][0], val:a, keys:["Digit1"] }, { id:"bG2", html:PERKS[b][0], val:b, keys:["Digit2"] }]);
+  gun.perks.add(pick); if (pick === "SECOND_WIND") gun.winged = false; if (pick === "FLESH_WOUND") gun.flesh = 1;
+  hideOverlay(); prompt("");
+}
+// the Seven-Johns, two humans: the gunman's seat plays BOTH on one draw.
+async function twoPair(eng, bob, j1, j2, seatB, seatG){
+  drawPair(j1, j2); setLife(bob, [j1, j2]); p2draw("THE SEVEN-JOHNS", "he", null);
+  const [tb, tg] = await twoDraw(bob, { char:{ name:"THE SEVEN-JOHNS" }, winged:false, perks:new Set(), exposed:false }, seatB, seatG);
+  const order = tb <= tg ? ["bob","johns"] : ["johns","bob"];
+  for (const who of order){
+    if (!bob.alive) break;
+    if (who === "bob"){
+      for (const [j, side] of [[j1,"LEFT"],[j2,"RIGHT"]]){ if (!j.alive) continue;
+        const lane = await hiddenLane(seatB, 1100, `${seatB.name}: pull on the <b>${side}</b> John (hidden)`);
+        const read = await hiddenLane(seatG, 1100, `${seatG.name}: the ${side} John guards (hidden)`);
+        if (!lane) continue;
+        const out = eng._resolve(bob, lane, read, j); await freeze(lane, read, true); eng._land(j, out); drawPair(j1, j2); setLife(bob, [j1, j2]); }
+    } else {
+      for (const [j, side] of [[j1,"LEFT"],[j2,"RIGHT"]]){ if (!j.alive || !bob.alive) continue;
+        const lane = await hiddenLane(seatG, 1100, `${seatG.name}: the ${side} John aims (hidden)`);
+        if (!lane) continue;
+        const tell = eng._tell(j, lane, bob);
+        drawPair(j1, j2, j===j1 ? tell : null, j===j2 ? tell : null, j===j1 ? "draw" : null, j===j2 ? "draw" : null);
+        const read = await hiddenLane(seatB, TIMING.readWindowPair, `${seatB.name}: guard the <b>${side}</b> John — eyes: <b>${EYE_WORD[tell]}</b>`);
+        const out = eng._resolve(j, lane, read, bob); await freeze(lane, read, false); eng._land(bob, out); drawPair(j1, j2); setLife(bob, [j1, j2]); }
+    }
+  }
+  return !bob.alive;
+}
+// one ROUND: whoever sits in bobSeat plays Bob through the lineup. Returns gunmen beaten.
+async function twoRound(bangkok, bobSeat){
+  const seatB = SEATS[bobSeat], seatG = SEATS[1-bobSeat];
+  const eng = new Engine(Math.floor(Math.random()*1e9));
+  const bob = new Side({ ...BOB, tell: BOB_TELL_2P }, new HumanCtl());
+  let beaten = 0; p2show(true); setPoem(0); critical(false);
+  overlay(`<h1>ROUND — ${seatB.name} IS BOB</h1><p>${seatG.name} plays every gunman. ${bangkok ? "<span class='lethal'>BANGKOK RULES</span> — make or die." : "draw, read, survive."}</p>
+    <p class="dim">${seatB.name} (Bob): ${seatB.keysTxt}<br>${seatG.name} (gunmen): ${seatG.keysTxt}</p><div class="start">press any key</div>`);
+  await nextKey(() => true); hideOverlay();
+  for (let si=0; si<STAGES.length; si++){
+    stageStart(bob);
+    for (let bi=0; bi<DECISIONS_PER_STAGE; bi++){
+      if (si === PAIR_SLOT[0] && bi === PAIR_SLOT[1]){
+        const j1 = new Side({ ...SEVEN_JOHN, showboat:true }, new HumanCtl()), j2 = new Side({ ...SEVEN_JOHN_2, showboat:true }, new HumanCtl());
+        await playScene("johns");
+        if (await twoPair(eng, bob, j1, j2, seatB, seatG)) return beaten;
+        beaten++; setPoem(beaten); continue;
+      }
+      const gun = new Side({ ...LINEUP[si][bi], showboat:true }, new HumanCtl());
+      banner(`${whoName(gun.char)}`, `${whoLine(gun.char)}${gun.char.pron==="she" ? " — she" : ""}`, true); await sleep(900);
+      if (bangkok){
+        let over = false;
+        for (let x=0; x<BANGKOK_SHOTS; x++){
+          const [bDied, gDied] = await twoVolley(eng, bob, gun);
+          if (bDied) return beaten;
+          if (gDied){ over = true; break; }
+          await twoGunmanPerk(gun, seatG);
+        }
+        if (!over && gun.alive && bob.winged && !gun.winged){ banner("CLOCK'S UP", "the more-wounded man falls", true); await sleep(1200); return beaten; }
+      } else {
+        for (let x=0; x<BOUT_EXCHANGES; x++){
+          const dead = await twoExchange(eng, bob, gun, seatB, seatG);
+          if (dead === bob) return beaten;
+          if (dead === gun) break;
+          await twoGunmanPerk(gun, seatG);
+        }
+      }
+      beaten++; setPoem(beaten);
+    }
+    // Bob's stage perk (pick by Bob's seat)
+    if (bob.perks.has("SECOND_WIND") && bob.winged) bob.winged = false;
+    if (si < PERK_PAIRS.length) await perkPick(bob, si);
+  }
+  return beaten;
+}
+async function twoPlayer(bangkok){
+  window.__twoMode = true;
+  const scores = [0, 0];
+  for (const bobSeat of [0, 1]){
+    scores[bobSeat] = await twoRound(bangkok, bobSeat);
+    await playScene("died", { name: `${SEATS[bobSeat].name} as Bob beat ${scores[bobSeat]} of 12` });
+  }
+  p2show(false); critical(false); window.__twoMode = false;
+  const w = scores[0] === scores[1] ? "A DRAW — nobody walks" : `${scores[0] > scores[1] ? "P1" : "P2"} TAKES IT`;
+  overlay(`<h1>THE TOURNAMENT</h1><p>P1 as Bob: <b>${scores[0]}</b> gunmen &nbsp;·&nbsp; P2 as Bob: <b>${scores[1]}</b> gunmen</p>
+    <h1 class="gold">${w}</h1><div class="start">press any key</div>`);
+  await nextKey(() => true); boot();
+}
+window.__two = { twoPlayer };
+// dev/QA hook: put the screen in any state for a screenshot (tools/_shots.mjs). Presentation only.
+window.__pose = { animate, eyeInsert, fxAt, drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
+  clock, overlay, hideOverlay, showGuard, zone:(l,c)=>$("z"+l).classList.add(c), clearZones, cylinder, SEATS,
+  chars:{ BOB, MARSHAL, BATTER, PHOTOGRAPHER, PRESIDENTS_MAN, SEVEN_JOHN, SEVEN_JOHN_2, LINEUP }, Side, HumanCtl };
+
+async function howTo() {
+  overlay(`<h1>HOW TO PLAY</h1>
+    <p><b>Watch the man.</b> His <b>body</b> says <i>when</i> — don't bite on the twitch: fire during <i>steady…</i> and it's a false start.
+    His <b>eyes</b> say <i>where</i> — mostly. <span class="k">^ ^</span> high · <span class="k">• •</span> level · <span class="k">v v</span> low.</p>
+    <p>On <span class="big gold">DRAW!</span> the crosshair's on his chest — correct and <span class="k">FIRE</span>.
+    <span class="k">HEAD</span> = the headshot, the legend. <span class="k">CENTER</span> = the honest kill. <span class="k">GUT</span> = a wound — he'll be back, and it's <span class="lethal">dishonor</span>: no coins from the crowd, and your family is watching.</p>
+    <p>His dashed guard drifts to <i>your</i> habit. Break pattern. If he's first: his <b>eyes</b> come early and can lie —
+    his <b>shoulder</b> swings late and never does. Guard before the window closes.</p>
+    <p class="dim">Fast is fine, but accuracy is everything: the crosshair sways after the draw and settles. The head is small. Pull it wide and you miss.</p>
+    <p><span class="k">F</span> during <i>steady…</i> sells your shoulder: if he bites he fires into the dirt and the draw is yours —
+    if he doesn't, you're slower and <span class="lethal">open low</span> (a wing kills you). Readers don't bite.</p>
+    <p>Win the draw and <span class="k">WHOA!</span> lights for an instant — <span class="k">E</span> / right-click to fan the hammer. <span class="gold">DID YOU SEE THAT?</span> = legend; a legend loads the gun.</p>
+    <p class="dim">KILL removes him. WING changes him. BLOCK postpones him. 4 stages × 3 + the couplet = 14. You are meant to lose.</p>
+    <div class="start">click / press any key — drop the quarter</div>`); if (ART_NEW) labMenuBg("menu_howto", "drop the quarter");
+  await nextKey(() => true); hideOverlay();
+}
+async function startGame(skipHow=false) {
+  RUN = true;
+  if (!skipHow) await howTo();
+  overlay(`<h1>HOW MANY?</h1><p><span class="k">1</span> one player — the story</p>
+    <p><span class="k">2</span> two players — THE TOURNAMENT (P2 plays every gunman) &nbsp; <span class="k">B</span> two players, <span class="lethal">BANGKOK RULES</span></p>
+    <p><span class="k">R</span> THE ROSTER — face any one of them <span class="gold">(the next seven are here)</span></p>
+    <p class="dim">"You want out? You need someone. Until you don't."</p>
+    <p class="dim">(any other key = one player)</p>`); if (ART_NEW) labMenuBg("menu_howmany", "one player");
+  const k = await nextKey(() => true);
+  hideOverlay();
+  if (k === "Digit2") return twoPlayer(false);
+  if (k === "KeyB") return twoPlayer(true);
+  if (k === "KeyR") return roster();
+  play();
+}
+
+// THE ROSTER (1026) — face any one man, one bout: up to BOUT_EXCHANGES exchanges, or until somebody drops.
+// THE NEXT SEVEN (web/foes.mjs, Joe's unused Detroit roster) fight here before any of them is slotted into the
+// sonnet. Practice only: nothing scored, nothing saved, the same exchange() the story uses.
+async function roster(){
+  const canon = LINEUP.flat().filter(Boolean);
+  for (;;){
+    overlay(`<h1>THE ROSTER</h1><p class="dim">the next seven — Joe's Detroit roster, never seen on the street before</p>`
+      + NEXT_SEVEN.map((x,i) => `<p><span class="k">${i+1}</span> <b>${x.char.name}</b> — <span class="dim">${x.read}</span></p>`).join("")
+      + `<p class="dim">the lineup</p><p>` + canon.map((c,i) => `<span class="k">${String.fromCharCode(65+i)}</span> ${whoName(c)}`).join(" &nbsp; ")
+      + `</p><div class="start">ESC — back</div>`);
+    const k = await nextKey(c => c === "Escape" || /^Digit[1-7]$/.test(c) || (/^Key[A-Z]$/.test(c) && c.charCodeAt(3) - 65 < canon.length));
+    hideOverlay();
+    if (k === "Escape") return startGame(true);
+    await rosterBout(k.startsWith("Digit") ? NEXT_SEVEN[+k.slice(5) - 1].char : canon[k.charCodeAt(3) - 65]);
+  }
+}
+async function rosterBout(char){
+  const eng = new Engine(Math.floor(Math.random()*1e9));
+  const bob = new Side(BOB, new HumanCtl()), opp = new Side(char, new AIController());
+  const run = { legend:0, score:0, cleared:0, surveillance:0, anders_scrubs:0, deadeye:0, deadeyeBest:0, president_dead:false, dishonor:0 };
+  $("hand").classList.remove("hurt"); hand("idle"); showPres(false); setHUD(run); setPoem(0); setLife(bob, null); iris(null); critical(false);
+  clock(""); sting('duel'); stagePlate(0);
+  const nx = NEXT_BY_NAME[char.name];
+  banner(whoName(char), nx ? nx.read : isBossChar(char) ? (BOSS_TELL[char.name] || "BOSS") : whoLine(char), true);
+  await sleep(TIMING.bannerBeat);
+  for (let i = 0; i < BOUT_EXCHANGES && bob.alive && opp.alive; i++){
+    await exchange(eng, bob, opp, run); clearZones(); await sleep(TIMING.bannerBeat); iris(null);
+  }
+  const P0 = PR(char);
+  if (!bob.alive) await story(`DIED — ${whoName(char)}`, nx ? `<span class="dim">${nx.line}</span>` : "");
+  else if (!opp.alive) await story(`${P0.HE}'S DOWN`, `${whoName(char)}.${nx ? ` <span class="dim">${nx.line}</span>` : ""}`);
+  else await story(`${P0.HE} WALKS`, `${BOUT_EXCHANGES} exchanges and nobody dropped.${opp.winged ? ` ${P0.He}'s winged.` : ""}`);
+}
+
+// ---- ARCADE GAMEPAD (1-PLAYER) — self-contained poll loop, no engine refactor, no external lib.
+// Stick/d-pad/hat VERTICAL -> lane select (UP=HEAD, DOWN=WING, neutral=CENTER) by synthesizing the
+// SAME window keydowns the keyboard lanes use (reuses KEYLANE + every kd/nextKey listener).
+// Button 0 = FIRE -> synthetic Space (fires the hover AND advances "press any key" beats / coin drop).
+const PAD_SEAT = [
+  { up:"KeyW", down:"KeyX", center:"KeyS", draw:"ShiftLeft", feint:"KeyQ" },
+  { up:"KeyI", down:"KeyM", center:"KeyK", draw:"Enter", feint:"KeyU" },
+];
+const padSt = [];
+const keyCode = code => { try{ window.dispatchEvent(new KeyboardEvent("keydown", { code, key:code, bubbles:true })); }catch(e){} };
+function startGamepad(){
+  if (startGamepad._on) return; startGamepad._on = true;       // boot() runs every replay — one poll loop, not one per game
+  let lastDir = 0, lastFire = false;                                   // edge-detect so we don't spam every frame
+  const key = k => { try{ window.dispatchEvent(new KeyboardEvent("keydown", { key:k, code:(k===" "?"Space":k), bubbles:true })); }catch(e){} };
+  function poll(){
+    try {
+      const pads = (navigator.getGamepads ? navigator.getGamepads() : []) || [];
+      // 2 PLAYERS: pad 1 = P1's seat, pad 2 = P2's seat (up/down aim, btn3 center, btn0 draw, btn2 feint)
+      if (window.__twoMode){
+        const live = [...pads].filter(Boolean);
+        live.slice(0, 2).forEach((gp, i) => {
+          const K = PAD_SEAT[i], G = window.Ghost ? Ghost.read(gp) : { ay:0 }, st = (padSt[i] ||= {});
+          const dir = G.ay <= -0.5 ? -1 : G.ay >= 0.5 ? 1 : 0;
+          if (dir !== st.dir){ if (dir === -1) keyCode(K.up); else if (dir === 1) keyCode(K.down); st.dir = dir; }
+          for (const [b, code] of [[0, K.draw], [3, K.center], [2, K.feint]]){
+            const on = !!(window.Ghost ? Ghost.btn(gp, b) : false);
+            if (on && !st["b"+b]) keyCode(code); st["b"+b] = on;
+          }
+        });
+        requestAnimationFrame(poll); return;
+      }
+      let gp = null; for (const p of pads){ if (p){ gp = p; break; } }
+      if (gp){
+        const DZ = 0.5;
+        // VERTICAL fold via the GHOST: it self-calibrates left/right stick, d-pad buttons
+        // 12/13 and the POV hat into one deflection (G.ay, up=-1), dead F300 axes filtered out.
+        const G = (window.Ghost ? Ghost.read(gp) : { ay:0 });
+        const v = G.ay;
+        const dir = v <= -DZ ? -1 : (v >= DZ ? 1 : 0);          // UP=HEAD(ArrowUp), DOWN=WING(ArrowDown)
+        if (dir !== lastDir){ if (dir === -1) key("ArrowUp"); else if (dir === 1) key("ArrowDown"); lastDir = dir; }
+        const fire = !!(window.Ghost ? Ghost.btn(gp, 0) : false);
+        const whoaB = !!(window.Ghost ? Ghost.btn(gp, 1) : false);          // button 1 = WHOA!
+        if (whoaB && !startGamepad._w) window.dispatchEvent(new KeyboardEvent("keydown", { key:"e", code:"KeyE", bubbles:true }));
+        startGamepad._w = whoaB;
+        const feintB = !!(window.Ghost ? Ghost.btn(gp, 2) : false);        // button 2 = sell the shoulder (feint)
+        if (feintB && !startGamepad._f) window.dispatchEvent(new KeyboardEvent("keydown", { key:"f", code:"KeyF", bubbles:true }));
+        startGamepad._f = feintB;
+        const startB = !!(window.Ghost ? Ghost.btn(gp, 9) : false);       // START = pause (UI-AUDIT 1110)
+        if (startB && !startGamepad._s) key("Escape"); startGamepad._s = startB;
+        if (fire && !lastFire) key(" ");                               // rising-edge FIRE / advance / coin
+        lastFire = fire;
+      }
+    } catch(e){}
+    requestAnimationFrame(poll);
+  }
+  requestAnimationFrame(poll);
+}
+
+function boot() {
+  RUN = false;
+  banner("", ""); prompt(""); clearZones(); setPoem(0);
+  startGamepad();
+  overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
+    <p class="dim">Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">INSERT COIN — press any key</div>`); if (ART_NEW) labMenuBg("menu_boot", "INSERT COIN");
+  nextKey(() => true).then(() => { try{ ac().resume(); }catch(e){} attract(); });   // gesture unlocks audio (mp3 + sfx), then the trailer
+}
+boot();
+</script>
+</body>
+</html>

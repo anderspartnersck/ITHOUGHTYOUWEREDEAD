@@ -1,0 +1,146 @@
+{
+ "s1": {
+  "seq": "web/story/kitchen",
+  "n": 41,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s2": {
+  "seq": "web/story/eye",
+  "n": 36,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s3": {
+  "seq": "web/story/burn2",
+  "n": 41,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s4": {
+  "seq": "web/story/laugh",
+  "n": 31,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s5": {
+  "seq": "web/story/catch_L",
+  "n": 26,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "once"
+ },
+ "s6": {
+  "img": "web/attract/duel_kill.webp"
+ },
+ "s7": {
+  "img": "web/attract/duel_draw.webp"
+ },
+ "s8": {
+  "seq": "web/story/kids",
+  "n": 38,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s9": {
+  "seq": "web/story/flip",
+  "n": 43,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s10": {
+  "seq": "web/story/coma",
+  "n": 34,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s11": {
+  "seq": "web/story/lands",
+  "n": 31,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "once"
+ },
+ "s12": {
+  "seq": "web/story/drone",
+  "n": 34,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s13": {
+  "seq": "web/story/famous",
+  "n": 38,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s14": {
+  "img": "web/attract/duel_kill.webp"
+ },
+ "s15": {
+  "seq": "web/story/bang",
+  "n": 22,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "once"
+ },
+ "s16": {
+  "img": "web/attract/duel_kill.webp"
+ },
+ "s17": {
+  "seq": "web/story/dusk",
+  "n": 8,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s20": {
+  "seq": "web/story/kitchen",
+  "n": 41,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "s21": {
+  "seq": "web/story/pushin",
+  "n": 26,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "once"
+ },
+ "s22": {
+  "img": "web/attract/duel_kill.webp"
+ },
+ "title": {
+  "seq": "web/story/laugh",
+  "n": 31,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "menu_boot": {
+  "seq": "web/story/laugh",
+  "n": 31,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ },
+ "menu_howto": {
+  "img": "web/attract/duel_idle.webp"
+ },
+ "menu_howmany": {
+  "seq": "web/story/kids",
+  "n": 38,
+  "ext": "webp",
+  "fps": 12,
+  "mode": "pingpong"
+ }
+}

@@ -2,6 +2,9 @@
 
 **Play it in your browser: <https://anderspartnersck.github.io/ITHOUGHTYOUWEREDEAD/>**
 
+**3D edition: <https://anderspartnersck.github.io/ITHOUGHTYOUWEREDEAD/3d.html>** — the same game with a rendered
+cold open, street, crowd and menus. Press **T** to flip back to the original art.
+
 A Cleveland Bob story. An arcade tragedy set in Detroit.
 
 **Status:** plays start to finish; the art is partly done (much of the cast is still drawn in ASCII).

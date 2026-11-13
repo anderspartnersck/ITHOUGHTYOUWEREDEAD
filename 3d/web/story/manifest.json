@@ -1,0 +1,281 @@
+{
+ "fps": 12,
+ "size": [
+  960,
+  540
+ ],
+ "beats": {
+  "lullaby": {
+   "h": ". . .",
+   "text": "DEAD-EYE \u2014 slow and warm. a lullaby before it was a theme.",
+   "ms": 1600
+  },
+  "kitchen": {
+   "h": "FRAME ONE",
+   "text": "coffee with his wife. an ordinary morning for an Anders & Partners man.",
+   "cls": "warm",
+   "seq": {
+    "dir": "web/story/kitchen",
+    "n": 41,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3417
+  },
+  "eye": {
+   "text": "out the window, the bad eye over the city.",
+   "seq": {
+    "dir": "web/story/eye",
+    "n": 36,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3000
+  },
+  "burn1": {
+   "text": "television. surveillance. knowing things immediately.",
+   "seq": {
+    "dir": "web/story/burn1",
+    "n": 41,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3417
+  },
+  "burn2": {
+   "text": "AI is wiping out the need for bean counters like him. it could be worse.",
+   "seq": {
+    "dir": "web/story/burn2",
+    "n": 41,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3417
+  },
+  "famous": {
+   "text": "he could be famous. he leaves that to his favorite films.",
+   "cls": "warm",
+   "seq": {
+    "dir": "web/story/famous",
+    "n": 38,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3200
+  },
+  "popcorn": {
+   "text": "overwhelmed, he takes a break. a bowl of popcorn. what to watch?",
+   "cls": "warm",
+   "seq": {
+    "dir": "web/story/popcorn",
+    "n": 31,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2600
+  },
+  "flip": {
+   "text": "\"it used to be easy. turn on the TV, pick the first thing with a gun and a scowl, and watch like a connoisseur.\"",
+   "seq": {
+    "dir": "web/story/flip",
+    "n": 43,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3600
+  },
+  "coma": {
+   "h": "BREAKING",
+   "text": "\"these days it's becoming all too real.\"",
+   "seq": {
+    "dir": "web/story/coma",
+    "n": 34,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2833
+  },
+  "bang": {
+   "h": "BANG.",
+   "text": "outside.",
+   "cls": "lethal",
+   "flash": "white",
+   "seq": {
+    "dir": "web/story/bang",
+    "n": 22,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 1833
+  },
+  "dusk": {
+   "flash": "purple",
+   "seq": {
+    "dir": "web/story/dusk",
+    "n": 8,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 667
+  },
+  "acc1": {
+   "img": "sprites/coldopen/accident_wide.jpg",
+   "text": "a rear-ender at the light on Maple.",
+   "ms": 2400
+  },
+  "acc2": {
+   "img": "sprites/coldopen/accident_rage.jpg",
+   "text": "then it wasn't an accident anymore.",
+   "ms": 2600,
+   "cls": "lethal"
+  },
+  "acc3": {
+   "img": "sprites/coldopen/accident_looks.jpg",
+   "text": "the cop looks up. he saw Bob see it.",
+   "ms": 2600
+  },
+  "laugh": {
+   "text": "he laughs. an accountant. unarmed.",
+   "seq": {
+    "dir": "web/story/laugh",
+    "n": 31,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2600
+  },
+  "catch_L": {
+   "text": "\"go on, Bob. catch.\"",
+   "seq": {
+    "dir": "web/story/catch_L",
+    "n": 26,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2200
+  },
+  "catch_R": {
+   "text": "\"go on, Bob. catch.\"",
+   "seq": {
+    "dir": "web/story/catch_R",
+    "n": 26,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2200
+  },
+  "lands": {
+   "text": "it lands at his feet. the man across the street is already ready.",
+   "cls": "lethal",
+   "seq": {
+    "dir": "web/story/lands",
+    "n": 31,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2600
+  },
+  "drone": {
+   "text": "the city is already recording. LIVE.",
+   "cls": "lethal",
+   "seq": {
+    "dir": "web/story/drone",
+    "n": 34,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2833
+  },
+  "kids": {
+   "text": "at home, his family is watching Channel 6.",
+   "seq": {
+    "dir": "web/story/kids",
+    "n": 38,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 3200
+  },
+  "title": {
+   "h": "I THOUGHT YOU WERE DEAD!",
+   "text": "a CLEVELAND BOB story",
+   "ms": 1800
+  },
+  "pushin": {
+   "h": "STAGE 1: DEAD-EYE",
+   "text": "he fights for FAMILY. \u2014 learn to read people.",
+   "seq": {
+    "dir": "web/story/pushin",
+    "n": 26,
+    "fps": 12,
+    "ext": "webp"
+   },
+   "ms": 2200
+  }
+ },
+ "order_game": [
+  "lullaby",
+  "kitchen",
+  "eye",
+  "burn1",
+  "burn2",
+  "famous",
+  "popcorn",
+  "flip",
+  "coma",
+  "bang",
+  "acc1",
+  "acc2",
+  "acc3",
+  "laugh",
+  "catch",
+  "lands",
+  "drone",
+  "kids",
+  "title"
+ ],
+ "order_continuity": [
+  "lullaby",
+  "kitchen",
+  "eye",
+  "burn1",
+  "burn2",
+  "famous",
+  "popcorn",
+  "flip",
+  "coma",
+  "bang",
+  "acc1",
+  "acc2",
+  "acc3",
+  "laugh",
+  "catch",
+  "lands",
+  "drone",
+  "kids",
+  "title",
+  "pushin"
+ ],
+ "order_v1": [
+  "lullaby",
+  "kitchen",
+  "popcorn",
+  "coma",
+  "bang",
+  "dusk",
+  "acc1",
+  "acc2",
+  "acc3",
+  "laugh",
+  "catch",
+  "lands",
+  "drone",
+  "kids",
+  "title"
+ ],
+ "catch_sides": [
+  "L",
+  "R"
+ ],
+ "note": "order = Joe's cold open (1025); continuity adds the push into the duel camera. 'catch' resolves to catch_L / catch_R."
+}
