@@ -53,8 +53,13 @@ export function lastRites(eng, bob, run) {
 }
 
 // hooks: callbacks let the cab render; headless parity passes no-ops + an auto-record policy.
-export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, hooks = {} } = {}) {
-  const eng = new Engine(seed, hooks.present);
+// DID YOU SEE THAT? held (1117 ?ctl=click, mirror of cleveland_bob._record): what the camera caught -> Legend.
+function record(run, bob) {
+  for (let i = 0; i < bob.on_record; i++) { run.legend += 1; run.surveillance += 1; run.score += run.dishonor < DISHONOR_SHAMED ? SCORE_ON_RECORD : Math.floor(SCORE_ON_RECORD / 2); }
+  bob.on_record = 0;
+}
+export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, hooks = {}, dyst = false } = {}) {
+  const eng = new Engine(seed, hooks.present, { dyst });
   const run = { legend: 0, score: 0, cleared: 0, surveillance: 0, anders_scrubs: 2, president_dead: false, dishonor: 0 };
   const bob = new Side(BOB, bobCtrl);
   const askRecord = onRecordAsk || (() => eng.rng.random() < autoRecord);   // human button OR auto policy
@@ -74,7 +79,8 @@ export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, 
       if (fightBeat(eng, bob, opp, pool)) return die(`DIED — stage ${si + 1}, beat ${bi + 1}`);
       run.cleared += 1; run.score += beatScore(si, opp);
       run.dishonor = bob.gut_shots;
-      if (askRecord(run)) { run.legend += 1; run.surveillance += 1; run.score += run.dishonor < DISHONOR_SHAMED ? SCORE_ON_RECORD : Math.floor(SCORE_ON_RECORD / 2); }
+      if (eng.dyst) record(run, bob);
+      else if (askRecord(run)) { run.legend += 1; run.surveillance += 1; run.score += run.dishonor < DISHONOR_SHAMED ? SCORE_ON_RECORD : Math.floor(SCORE_ON_RECORD / 2); }
     }
     if (si === 1 && thePresident(eng, bob, run)) return die("DIED — THE PRESIDENT'S MAN");
     if (si === 2 && run.president_dead && heyBobSmile(eng, bob, run)) return die("DIED — HEY BOB, SMILE!");
@@ -87,6 +93,7 @@ export function playRun(bobCtrl, seed, { autoRecord = null, onRecordAsk = null, 
   }
   run.score += SCORE_REACH_TABLE;
   run.dishonor = bob.gut_shots;
+  if (eng.dyst) record(run, bob);
   const ending = lastRites(eng, bob, run);
   run.cleared += 2;
   run.score += ending === "THE MAN, ALONE" ? SCORE_THE_MAN_ALONE : ending === "THE MAN" ? SCORE_THE_MAN : SCORE_THE_CHAMBER;

@@ -13,6 +13,8 @@ export const DRAW_LO = 0.25, DRAW_HI = 0.55;   // the CPU's draw window (s) — 
 export const WINGED_SLOW = 0.08;                 // a wounded man draws slower
 export const FALSE_START = Infinity;             // fire during "steady..." and you've given him the draw
 export const QUICK_HAND_S = 0.015, SELL_IT_SECOND = 0.5, READ_EYES_BONUS = 0.04;   // PERKS
+// DID YOU SEE THAT? held (1117, mirror of engine.py): OFF unless new Engine(seed, present, {dyst:true}) (?ctl=click).
+export const DYST_STEADY_S = 0.05, DYST_DOWN_S = 0.10;
 export const FEINT_COST = 0.04;                  // Bob's unbought shoulder feint: slower AND open low (a wing kills)
 
 export function resolveStrike(attack, read) {
@@ -92,6 +94,14 @@ export class AIController {
   pick_perk(char, options, rng) { return rng.choice(options); }
   pick_target(char, rng) { return rng.random() < 0.25; }
   spin_again(char, bullets, rng) { return rng.random() < 0.5; }
+  want_steady(char, rng) { return false; }   // DYST (only asked with eng.dyst, of a showboat)
+  want_dive(char, rng) { return false; }
+}
+
+export class DystAI extends AIController {   // the floor that leans on DID YOU SEE THAT? (parity + battery only)
+  constructor(steady = 0.3, dive = 0.3) { super(); this.p_steady = steady; this.p_dive = dive; }
+  want_steady(char, rng) { return rng.random() < this.p_steady; }
+  want_dive(char, rng) { return rng.random() < this.p_dive; }
 }
 
 export class SkilledController extends AIController {   // the skill ceiling (matches engine.py)
@@ -110,16 +120,32 @@ export class SkilledController extends AIController {   // the skill ceiling (ma
 }
 
 export class Side {
-  constructor(char, ctrl) { this.char = char; this.ctrl = ctrl; this.alive = true; this.winged = false; this.whoa_available = true; this.lethal_wing = false; this.exposed = false; this.perks = new Set(); this.flesh = 0; this.whoa_spare = 0; this.gut_shots = 0; this.attacks = []; this.reads = []; }
+  constructor(char, ctrl) { this.char = char; this.ctrl = ctrl; this.alive = true; this.winged = false; this.whoa_available = true; this.lethal_wing = false; this.exposed = false; this.perks = new Set(); this.flesh = 0; this.whoa_spare = 0; this.gut_shots = 0; this.grounded = false; this.steady = false; this.on_record = 0; this.attacks = []; this.reads = []; }
 }
 
 // ---- ENGINE ----
 export class Engine {
-  constructor(seed, present) { this.rng = new PyRandom(seed); this.present = present || (() => {}); this.last_duel_exchanges = 0; }
+  constructor(seed, present, opts = {}) { this.rng = new PyRandom(seed); this.present = present || (() => {}); this.last_duel_exchanges = 0; this.dyst = !!opts.dyst; }
   STALL_CAP = 64;
 
-  _resolve(attacker, lane, read, reader = null) {
-    const out = resolveStrike(lane, read);
+  // DYST + DODGE (mirror of engine.py _dive)
+  _dive(reader) {
+    if (!(this.dyst && reader.char.showboat && reader.ctrl.want_dive(reader.char, this.rng))) return false;
+    reader.grounded = true; reader.on_record += 1; this.present("dive", { side: reader });
+    return true;
+  }
+  _dystDraw(side, t) {
+    side.steady = false;
+    if (!side.char.showboat) return t;
+    if (side.grounded) { side.grounded = false; t += DYST_DOWN_S; }
+    if (side.ctrl.want_steady(side.char, this.rng)) { side.steady = true; t += DYST_STEADY_S; this.present("steady", { side }); }
+    return t;
+  }
+  _steadyRecord(attacker, out) { if (attacker.steady && (out === KILL || out === WINGED)) attacker.on_record += 1; }
+  _resolve(attacker, lane, read, reader = null, dive = false) {
+    let out = resolveStrike(lane, read);
+    if (dive && out === KILL) out = WINGED;                      // THE DIVE: his kill only clips you
+    if (attacker.steady && out === GRAZE) out = WINGED;          // THE STEADY HAND: a read shot still clips past the guard
     if (out === WINGED && (attacker.char.wing_kills || attacker.lethal_wing || (reader !== null && reader.exposed))) return KILL;
     return out;
   }
@@ -169,13 +195,14 @@ export class Engine {
 
   exchange(a, b, alt = null, first = null) {
     let attacker;
-    a.exposed = b.exposed = false;
+    a.exposed = b.exposed = false; a.steady = b.steady = false;
     if (first === null) {
       let ta = a.ctrl.reflex(a.char, this.rng), tb = b.ctrl.reflex(b.char, this.rng);
       if (a.winged && !a.perks.has("COLD_NERVE")) ta += WINGED_SLOW;
       if (b.winged && !b.perks.has("COLD_NERVE")) tb += WINGED_SLOW;
       if (a.perks.has("QUICK_HAND")) ta -= QUICK_HAND_S;
       if (b.perks.has("QUICK_HAND")) tb -= QUICK_HAND_S;
+      if (this.dyst) { ta = this._dystDraw(a, ta); tb = this._dystDraw(b, tb); }
       if (this._feint(b, a) === "bit") ta = FALSE_START;
       const fa = this._feint(a, b);
       if (fa === "bit") tb = FALSE_START;
@@ -194,8 +221,9 @@ export class Engine {
       const tell = this._tell(attacker, lane, reader);
       const read = reader.ctrl.defend_read(reader.char, attacker.attacks, this.rng, tell);
       attacker.attacks.push(lane); reader.reads.push(read);
-      const out = this._resolve(attacker, lane, read, reader);
+      const out = this._resolve(attacker, lane, read, reader, this._dive(reader));
       this._gut(attacker, lane, out);
+      this._steadyRecord(attacker, out);
       this.present("strike", { attacker, reader, lane, read, out });
       return this._land(reader, out) ? reader : null;
     }
@@ -225,6 +253,7 @@ export class Engine {
     const t2 = j2.ctrl.reflex(j2.char, this.rng);
     if (bob.winged && !bob.perks.has("COLD_NERVE")) tb += WINGED_SLOW;
     if (bob.perks.has("QUICK_HAND")) tb -= QUICK_HAND_S;
+    if (this.dyst) tb = this._dystDraw(bob, tb);
     const order = [[tb, 0, bob], [t1, 1, j1], [t2, 2, j2]]
       .sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : x[1] - y[1]));
     this.present("draw_pair", { order: order.map(o => o[2]) });
@@ -237,6 +266,7 @@ export class Engine {
             bob.attacks.push(lane); j.reads.push(read);
             const out = this._resolve(bob, lane, read);
             this._gut(bob, lane, out);
+            this._steadyRecord(bob, out);
             this.present("strike", { attacker: bob, reader: j, lane, read, out });
             this._land(j, out);
           }
@@ -245,7 +275,7 @@ export class Engine {
         const lane = who.ctrl.attack_lane(who.char, bob.reads, this.rng);
         const read = bob.ctrl.defend_read(bob.char, who.attacks, this.rng, this._tell(who, lane, bob));
         who.attacks.push(lane); bob.reads.push(read);
-        const out = this._resolve(who, lane, read);
+        const out = this._resolve(who, lane, read, null, this._dive(bob));
         this.present("strike", { attacker: who, reader: bob, lane, read, out });
         if (this._land(bob, out)) return bob;
       }
