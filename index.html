@@ -1545,11 +1545,15 @@ async function end(run, ending, eng){
 
 // ---- leaderboard (localStorage) ----
 const DEFAULTS = [{s:12200,ini:"SNK",c:14},{s:9100,ini:"POM",c:14},{s:6600,ini:"A&P",c:12},{s:4200,ini:"WIF",c:8},{s:1900,ini:"BOB",c:3}];
-function loadScores(){ try{ return JSON.parse(localStorage.getItem("itywd")||"null") || DEFAULTS.slice(); }catch{ return DEFAULTS.slice(); } }
+// Studio rule: a plain web visit stores NOTHING. The board lives in memory on the web; it persists only on file:// or localhost (the studio).
+const CAN_STORE = location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+let MEM_SCORES = null;
+function loadScores(){ if(!CAN_STORE) return (MEM_SCORES || DEFAULTS).slice(); try{ return JSON.parse(localStorage.getItem("itywd")||"null") || DEFAULTS.slice(); }catch{ return DEFAULTS.slice(); } }
 function saveScore(s, c){
   let b = loadScores().map(x=>({...x, you:false}));
   const me = {s, ini:"BOB", c, you:true};
   b.push(me); b.sort((x,y)=>y.s-x.s); b = b.slice(0,20);
+  if(!CAN_STORE){ MEM_SCORES = b.map(({you,...r})=>r); return b; }
   try{ localStorage.setItem("itywd", JSON.stringify(b.map(({you,...r})=>r))); }catch{}
   return b;
 }

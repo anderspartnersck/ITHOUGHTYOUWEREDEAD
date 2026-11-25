@@ -1367,7 +1367,7 @@ if (ART_NEW) await fetch(LAB + "web/story/manifest.json").then(r => r.json()).th
 // the throw comes from the crowd, LEFT or RIGHT (Joe 1025: "perhaps it alternates"): ?thrower=L|R|alt (default alt,
 // starting LEFT; the alternation is a per-viewer convenience in localStorage, harmless if storage is blocked)
 function labThrowSide(){ const q = (LQ.get("thrower") || "alt").toUpperCase(); if (q === "L" || q === "R") return q;
-  let n = 0; try { n = +(localStorage.getItem("itywd_lab_throws") || 0); localStorage.setItem("itywd_lab_throws", String(n + 1)); } catch {}
+  let n = (window.__itywdThrows = (window.__itywdThrows || 0) + 1) - 1;   // in memory: a plain web visit stores nothing
   return n % 2 === 0 ? "L" : "R"; }
 function labColdOpen(){ if (!LAB_STORY || LQ.get("seq") === "0") return;
   const o = LQ.get("order"), order = o === "game" ? LAB_STORY.order_game : o === "v1" ? LAB_STORY.order_v1 : LAB_STORY.order_continuity;
@@ -1642,11 +1642,15 @@ async function end(run, ending, eng){ if (/^DIED/.test(ending)) crowdReact("scat
 
 // ---- leaderboard (localStorage) ----
 const DEFAULTS = [{s:12200,ini:"SNK",c:14},{s:9100,ini:"POM",c:14},{s:6600,ini:"A&P",c:12},{s:4200,ini:"WIF",c:8},{s:1900,ini:"BOB",c:3}];
-function loadScores(){ try{ return JSON.parse(localStorage.getItem("itywd")||"null") || DEFAULTS.slice(); }catch{ return DEFAULTS.slice(); } }
+// Studio rule: a plain web visit stores NOTHING. The board lives in memory on the web; it persists only on file:// or localhost (the studio).
+const CAN_STORE = location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+let MEM_SCORES = null;
+function loadScores(){ if(!CAN_STORE) return (MEM_SCORES || DEFAULTS).slice(); try{ return JSON.parse(localStorage.getItem("itywd")||"null") || DEFAULTS.slice(); }catch{ return DEFAULTS.slice(); } }
 function saveScore(s, c){
   let b = loadScores().map(x=>({...x, you:false}));
   const me = {s, ini:"BOB", c, you:true};
   b.push(me); b.sort((x,y)=>y.s-x.s); b = b.slice(0,20);
+  if(!CAN_STORE){ MEM_SCORES = b.map(({you,...r})=>r); return b; }
   try{ localStorage.setItem("itywd", JSON.stringify(b.map(({you,...r})=>r))); }catch{}
   return b;
 }
