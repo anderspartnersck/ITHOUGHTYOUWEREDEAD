@@ -148,6 +148,7 @@
   #plateFG{ display:none; }
   body.look1117 #platePaint{ object-position:50% 50%; filter:none; }
   body.look1117 #world{ z-index:auto; } body.look1117 #world .bg, body.look1117 #crowd, body.look1117 #world .grade{ display:none; }
+  #plateFG:not([src]){ visibility:hidden; }   /* (1119) the couplet drops the FG src: no broken-image icon */
   body.look1117 #plateFG{ display:block; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:2; pointer-events:none; }
   body.look1117 #man{ transform:translate(-50%,-50%); width:auto; z-index:1; }
   body.look1117.redroom #overlay.show{ background:linear-gradient(rgba(25,2,2,.25), rgba(10,0,0,.62)); }
@@ -500,7 +501,7 @@ paintPlate(); window.addEventListener("resize", paintPlate);
 // camera (layout.json: feet + head as fractions of the 16:10 frame). The men without a painted cutout yet stand as INK
 // SILHOUETTES of the cop's poses with the set's rim light (ART REQUEST R12). Engine untouched.
 const LOOK1117 = new URLSearchParams(location.search).get("look") === "1117";
-const SETS1117 = ["maple", "maple", "underpass", "railyard"];
+const SETS1117 = ["maple", "maple2", "underpass", "railyard"];   // (1119) stage 2 = Maple St. three blocks on, not stage 1's frame again
 const LAY1117 = {};
 function stagePlate(si){
   if (!LOOK1117){ $("world").classList.toggle("painted1", si === 0); return; }   // PLATE 1 = stage 1
@@ -1639,7 +1640,7 @@ function attract() {
 const TITLE_IDLE_MS = 30000;
 function titleScreen() {
   overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
-    <p class="dim">Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">press any key</div>`);
+    <p class="dim">Created by Joseph Coleman, Claude, ChatGPT, and Blender<br>Castle Killscreen · Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">press any key</div>`);
   let done = false, waiter = null;
   const idle = setTimeout(() => { if (done) return; done = true; if (waiter) waiter._cleanup(); attract(); }, TITLE_IDLE_MS);
   nextKey(() => true, w => { waiter = w; }).then(() => { if (done) return; done = true; clearTimeout(idle); startGame(); });
@@ -1878,7 +1879,7 @@ async function twoPlayer(bangkok){
 window.__two = { twoPlayer };
 // dev/QA hook: put the screen in any state for a screenshot (tools/_shots.mjs). Presentation only.
 window.__pose = { animate, eyeInsert, fxAt, drawMan, pose, drawPair, showPres, iris, setLife, critical, hand, p2show, p2draw, banner, prompt,
-  clock, overlay, hideOverlay, showGuard, zone:(l,c)=>$("z"+l).classList.add(c), clearZones, cylinder, SEATS,
+  clock, overlay, hideOverlay, showGuard, stagePlate, render, zone:(l,c)=>$("z"+l).classList.add(c), clearZones, cylinder, SEATS,
   chars:{ BOB, MARSHAL, BATTER, PHOTOGRAPHER, PRESIDENTS_MAN, SEVEN_JOHN, SEVEN_JOHN_2, LINEUP }, Side, HumanCtl };
 
 async function howTo() {
@@ -2027,7 +2028,7 @@ function boot(cold) {
   if (!cold) return titleScreen();
   if (window.CKBoot && CKBoot.audioFree) return attract();
   overlay(`<h1>I THOUGHT YOU WERE DEAD!</h1><div class="credit">a CLEVELAND BOB story</div>
-    <p class="dim">Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">INSERT COIN — press any key</div>`);
+    <p class="dim">Created by Joseph Coleman, Claude, ChatGPT, and Blender<br>Castle Killscreen · Anders &amp; Partners</p><p class="dim">"A prison in your mind. Warden optional."</p><div class="start">INSERT COIN — press any key</div>`);
   nextKey(() => true).then(() => { try{ ac().resume(); }catch(e){} attract(); });   // gesture unlocks audio (mp3 + sfx), then the trailer
 }
 boot(true);
