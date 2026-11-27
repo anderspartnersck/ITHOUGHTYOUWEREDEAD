@@ -503,9 +503,9 @@ paintPlate(); window.addEventListener("resize", paintPlate);
 const LOOK1117 = new URLSearchParams(location.search).get("look") === "1117";
 const SETS1117 = ["maple", "maple2", "underpass", "railyard"];   // (1119) stage 2 = Maple St. three blocks on, not stage 1's frame again
 const LAY1117 = {};
-function stagePlate(si){
+function stagePlate(si, setName){
   if (!LOOK1117){ $("world").classList.toggle("painted1", si === 0); return; }   // PLATE 1 = stage 1
-  const set = SETS1117[Math.min(si, 3)], base = `sprites/plates1117/${set}/`;
+  const set = setName || SETS1117[Math.min(si, 3)], base = `sprites/plates1117/${set}/`;   // (1127) setName: the 2P soi
   $("world").classList.add("painted1"); $("platePaint").src = base + "bg.jpg"; $("plateFG").src = base + "fg.png";
   $("scene").dataset.set = set;
   const go = L => { LAY1117[set] = L; const m = $("man"), h = (L.feet[1] - L.head[1]) * 100;
@@ -513,6 +513,12 @@ function stagePlate(si){
   if (LAY1117[set]) go(LAY1117[set]); else fetch(base + "layout.json").then(r => r.json()).then(go).catch(() => {});
 }
 if (LOOK1117) document.body.classList.add("look1117");
+// (1127 IT-2036) ?look=1117 only: the STAGE 1-4 cards show the set's wide shot pushing in (a rendered WebP, plays once,
+// holds its last frame) instead of the ASCII street; the ASCII stays the default look and the fallback if the WebP fails.
+// A fresh query per showing restarts the animation (a preloaded once-only WebP would otherwise show its last frame).
+if (LOOK1117) SETS1117.forEach((set, i) => { let n = 0;
+  (RIG_SCENES["stage" + (i + 1)] || []).forEach(b => Object.defineProperty(b, "img", { configurable:true, enumerable:true,
+    get: () => `sprites/plates1117/${set}/stagecard.webp?c=${++n}` })); });
 const metaFor = name => SPRITE_META[name] || (LOOK1117 ? SPRITE_META["HUNTER 1"] : undefined);
 stagePlate(0);
 // in the 1117 look every man is a cutout: the painted one if he has a sheet, else the cop's pose as an INK SILHOUETTE
@@ -1827,6 +1833,7 @@ async function twoRound(bangkok, bobSeat){
   const eng = new Engine(Math.floor(Math.random()*1e9));
   const bob = new Side({ ...BOB, tell: BOB_TELL_2P }, new HumanCtl());
   let beaten = 0; p2show(true); setPoem(0); critical(false);
+  if (LOOK1117) stagePlate(0, "bangkok");               // (1127 IT-2034) ?look=1117: the 2P duels get their own set, the soi
   overlay(`<h1>ROUND — ${seatB.name} IS BOB</h1><p>${seatG.name} plays every gunman. ${bangkok ? "<span class='lethal'>BANGKOK RULES</span> — make or die." : "draw, read, survive."}</p>
     <p class="dim">${seatB.name} (Bob): ${seatB.keysTxt}<br>${seatG.name} (gunmen): ${seatG.keysTxt}</p><div class="start">press any key</div>`);
   await nextKey(() => true); hideOverlay();
