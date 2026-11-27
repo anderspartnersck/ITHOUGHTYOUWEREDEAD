@@ -1946,7 +1946,7 @@ async function twoRound(bangkok, bobSeat){
   const eng = new Engine(Math.floor(Math.random()*1e9));
   const bob = new Side({ ...BOB, tell: BOB_TELL_2P }, new HumanCtl());
   let beaten = 0; p2show(true); setPoem(0); critical(false);
-  if (LOOK1117) stagePlate(0, "bangkok");               // (1127 IT-2034) ?look=1117: the 2P duels get their own set, the soi
+  if (LOOK1117) stagePlate(0, "bangkokbang");           // (1127 IT-2034 -> 29C) ?look=1117: the 2P duels' own set, the alley behind BANGKOK BANG (the soi, plates1117/bangkok, unwired)
   overlay(`<h1>ROUND — ${seatB.name} IS BOB</h1><p>${seatG.name} plays every gunman. ${bangkok ? "<span class='lethal'>BANGKOK RULES</span> — make or die." : "draw, read, survive."}</p>
     <p class="dim">${seatB.name} (Bob): ${seatB.keysTxt}<br>${seatG.name} (gunmen): ${seatG.keysTxt}</p><div class="start">press any key</div>`);
   await nextKey(() => true); hideOverlay();
